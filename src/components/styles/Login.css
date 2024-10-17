@@ -1,0 +1,111 @@
+.login-page {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  background-color: #f0f4f8;
+}
+
+.login-container {
+  display: flex;
+  width: 800px;
+  height: 450px;
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
+  border-radius: 15px;
+  overflow: hidden;
+  background: linear-gradient(145deg, #ffffff, #dce4eb);
+  box-shadow: 20px 20px 60px #b8bcc0, -20px -20px 60px #ffffff;
+}
+
+.login-section {
+  color: #103900;
+  background-color: #ffffff;
+  width: 40%;
+  padding: 30px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.logo {
+  width: 80px;
+  margin-bottom: 20px;
+}
+
+.input-field {
+  width: 100%;
+  padding: 10px;
+  margin: 10px 0;
+  border: 1px solid #ccc;
+  border-radius: 10px;
+  box-shadow: inset 2px 2px 5px #b8bcc0, inset -2px -2px 5px #ffffff;
+}
+
+.button-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  margin-top: 15px;
+}
+
+.login-button {
+  align-self: center;
+  background-color: #4cafb0;
+  color: #fff;
+  border: none;
+  padding: 10px;
+  width: 100px;
+  border-radius: 10px;
+  cursor: pointer;
+  box-shadow: 2px 2px 5px #b8bcc0, -2px -2px 5px #ffffff;
+  transition: background-color 0.3s ease;
+}
+
+.login-button:hover {
+  background-color: #43a597;
+}
+
+.forgot-password {
+  margin-top: 10px;
+  color: #4cafb0;
+  text-decoration: none;
+  font-size: 0.9em;
+}
+
+.info-section {
+  background-color: #e6f7f1;
+  width: 60%;
+  padding: 30px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  color: #103900;
+}
+
+.info-section p {
+  text-align: justify;
+  color: #103900;
+}
+
+.signup-button {
+  align-self: center;
+  background-color: #007acc;
+  color: #fff;
+  padding: 10px;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  margin-top: 20px;
+  box-shadow: 2px 2px 5px #b8bcc0, -2px -2px 5px #ffffff;
+  transition: background-color 0.3s ease;
+}
+
+
+
+
+
+.signup-button:hover {
+  background-color: #006bb3;
+}
