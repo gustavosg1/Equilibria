@@ -1,0 +1,62 @@
+.app-container {
+    font-family: Arial, sans-serif;
+  }
+
+  
+.appointments-container {
+  padding: 20px;
+}
+
+.tabs {
+  display: flex;
+  justify-content: space-around;
+  margin-bottom: 20px;
+}
+
+.tab-button {
+  padding: 10px 20px;
+  background-color: #f0f0f0;
+  border: 1px solid #ccc;
+  cursor: pointer;
+}
+
+.appointment-list {
+  padding: 20px;
+}
+
+.appointment-card {
+  display: flex;
+  align-items: center;
+  border: 1px solid #e0e0e0;
+  padding: 20px;
+  margin-bottom: 10px;
+  background-color: #fff;
+}
+
+.psychologist-image {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  margin-right: 20px;
+}
+
+.appointment-info {
+  flex: 1;
+}
+
+.video-session-button {
+  background-color: #004f22;
+  color: white;
+  border: none;
+  padding: 10px;
+  margin-right: 10px;
+  cursor: pointer;
+}
+
+.cancel-button {
+  background-color: #ff4d4d;
+  color: white;
+  border: none;
+  padding: 10px;
+  cursor: pointer;
+}
