@@ -1,0 +1,50 @@
+.app-container {
+    font-family: Arial, sans-serif;
+}  
+
+.evaluation-container {
+    display: flex;
+    justify-content: space-around;
+    padding: 40px;
+}
+
+.rating-card {
+    background-color: #E6F7F1; /* Light greenish background */
+    border: 1px solid #ccc;
+    padding: 20px;
+    border-radius: 10px;
+    text-align: center;
+}
+
+.stars {
+    margin-top: 10px;
+}
+
+.star {
+    font-size: 30px;
+    color: #ccc;
+    cursor: pointer;
+}
+
+.star.selected {
+    color: #06BA63; /* Green color for selected stars */
+}
+
+.summary-options {
+    background-color: #F0F4F8; /* Light greyish background */
+    border: 1px solid #ccc;
+    padding: 20px;
+    border-radius: 10px;
+    width: 200px;
+}
+
+.summary-button {
+    width: 100%;
+    background-color: #4CAFB0; /* Button color matching scheme */
+    color: white;
+    border: none;
+    padding: 10px;
+    margin-bottom: 10px;
+    cursor: pointer;
+    border-radius: 5px;
+}
