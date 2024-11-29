@@ -27,12 +27,14 @@ const Login = () => {
     }
   };
 
+
   // Login com Email e Senha
   const handleEmailLogin = async (e) => {
     e.preventDefault();
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       console.log("Usuário logado com email:", userCredential.user);
+
 
       // Criar documento no Firestore para o usuário logado
       await createUserDocument(userCredential.user);

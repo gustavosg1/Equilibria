@@ -5,6 +5,7 @@ import { GoogleAuthProvider, OAuthProvider, signInWithPopup, createUserWithEmail
 import { auth } from "../firebase/FirebaseConfig";
 import { getFirestore, doc, setDoc } from "firebase/firestore";
 
+
 const RegisterPopup = ({ onClose }) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -58,10 +59,8 @@ const RegisterPopup = ({ onClose }) => {
     try {
       const result = await signInWithPopup(auth, provider);
       console.log("Usuário registrado com Google:", result.user);
-
       // Criar documento no Firestore para o usuário registrado
       await createUserDocument(result.user);
-
       onClose();
     } catch (error) {
       console.error("Erro ao fazer login com Google:", error);
@@ -112,6 +111,7 @@ const RegisterPopup = ({ onClose }) => {
           />
           <input
             type="password"
+
             placeholder="Confirmar Contraseña"
             className="input-field"
             value={confirmPassword}

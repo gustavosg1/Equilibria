@@ -5,6 +5,7 @@ import { initializeApp } from "firebase/app";
 import { getAuth, GoogleAuthProvider, OAuthProvider, signInWithPopup, signInWithEmailAndPassword } from 'firebase/auth';
 import { getStorage } from "firebase/storage";
 
+
 // Your web app's Firebase configuration
 const firebaseConfig = {
   apiKey: "AIzaSyB7c6HEQkrDsT5Inx5qsm-nH19DG-zAT0Q",
@@ -15,9 +16,7 @@ const firebaseConfig = {
   appId: "1:741512883157:web:285cd79569f75f984d6b5c"
 };
 
-
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const storage = getStorage(); // Inicializa o Storage
-
 export const auth = getAuth(app);
