@@ -1,47 +1,55 @@
-import React from 'react'
-import './styles/Menu.css'
+import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { signOut } from 'firebase/auth';
-import { auth } from '../firebase/FirebaseConfig'
+import { auth } from '../firebase/FirebaseConfig';
+import { AppBar, Toolbar, IconButton, Typography, Box, Button } from '@mui/material';
+import { styled } from '@mui/system';
 
-function Menu(){
+const StyledAppBar = styled(AppBar)({
+  backgroundColor: '#103900',
+  color: '#ffffff',
+  boxShadow: 'none',
+});
 
-    const navigate = useNavigate();
+const StyledLink = styled(Link)({
+  textDecoration: 'none',
+  color: '#ffffff',
+  marginRight: '20px',
+  '&:hover': {
+    color: '#1e90ff',
+  },
+});
 
-    async function HandleLogout(){
+function Menu() {
+  const navigate = useNavigate();
 
-        try{
-            await signOut(auth);
-            navigate("/");
-        }
-        catch (error)   {
-            console.error("Error al hacer logout", error);
-        }
+  async function HandleLogout() {
+    try {
+      await signOut(auth);
+      navigate('/');
+    } catch (error) {
+      console.error('Error al hacer logout', error);
     }
-    
+  }
 
-    return(
-        <div>
-            <header className="header">
-            <div className="logo">
-                {/* Replace with actual logo path */}
-                <img src="logo.png" alt="Logo" />
-            </div>
-            <nav className="nav">
-                <ul>
-                <li><Link to="/Perfil">Home</Link></li>
-                <li><Link to="/Especialistas">Especialistas</Link></li>
-                <li><Link to="/MisCitas">Mis Citas</Link></li>
-                <li><a href="#">Chat</a></li>
-                <li style={{ cursor: 'pointer' }} onClick={HandleLogout}>Salir</li>
-                </ul>
-            </nav>
-            </header>
-        </div>
-    )
+  return (
+    <StyledAppBar position="static">
+      <Toolbar>
+        <IconButton edge="start" color="inherit" aria-label="menu" sx={{ mr: 2 }}>
+          <img src='/images/Logo.png' alt="Logo" style={{ height: '50px', width: '50px' }} />
+        </IconButton>
+        <Typography variant="h6" component="div" sx={{ flexGrow: 1, justifyContent: "right" }}>
+          <StyledLink to="/Perfil">Home</StyledLink>
+          <StyledLink to="/Especialistas">Especialistas</StyledLink>
+          <StyledLink to="/MisCitas">Mis Citas</StyledLink>
+          <StyledLink to="#">Chat</StyledLink>
+          <Button color="inherit" onClick={HandleLogout} sx={{ marginLeft: '20px' }}>
+            Salir
+          </Button>
+        </Typography>
+      </Toolbar>
+    </StyledAppBar>
+  );
 }
 
 export default Menu;
-
-
-

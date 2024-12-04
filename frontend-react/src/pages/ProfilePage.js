@@ -1,100 +1,108 @@
 import React, { useEffect, useState } from 'react';
-import './styles/ProfilePage.css';
+import { Box, Grid, Avatar, Button, Typography, Paper, CircularProgress } from '@mui/material';
 import Menu from '../components/Menu';
-import Welcome from '../components/Welcome'
-import EditarPerfil from '../components/EditarPerfil'
-import { useAuth } from "../firebase/Authentication";
-import { Container, Row, Button, Col} from 'react-bootstrap'
+import Welcome from '../components/Welcome';
+import EditarPerfil from '../components/EditarPerfil';
+import { useAuth } from '../firebase/Authentication';
 import { getFirestore, doc, getDoc } from 'firebase/firestore';
 
-
-
 function ProfilePage() {
-  const [loading, setLoading] = useState(true);
   const { user } = useAuth();
-  const [currentPage, setCurrentPage] = useState("welcome");
+  const [currentPage, setCurrentPage] = useState('welcome');
   const db = getFirestore();
-  const [photo, setPhoto] = useState("");
+  const [photo, setPhoto] = useState('');
+
+  async function updatePhoto() {
+    const docRef = doc(db, 'users', user.uid);
+    const docSnap = await getDoc(docRef);
+
+    if (docSnap.exists()) {
+      const photoURL = docSnap.data().photoURL;
+      setPhoto(`${photoURL}?t=${Date.now()}`);
+    } else {
+      console.error('Documento do usuário não encontrado!');
+    }
+  }
 
   let view;
 
-  if (currentPage === "welcome") {
+  if (currentPage === 'welcome') {
     view = <Welcome />;
-  } else if (currentPage === "editarPerfil") {
-    view = <EditarPerfil />;
+  } else if (currentPage === 'editarPerfil') {
+    view = <EditarPerfil onPhotoUpdate={updatePhoto} />;
   } else {
-    view = <Welcome />; // Componente padrão se nenhum valor corresponder
+    view = <Welcome />;
   }
 
   useEffect(() => {
     const fetchUser = async () => {
       if (user) {
         try {
-          // Referencia ao documento do usuário no Firestore
-          const userDocRef = doc(db, "users", user.uid);
+          const userDocRef = doc(db, 'users', user.uid);
           const userDoc = await getDoc(userDocRef);
-  
+
           if (userDoc.exists()) {
             const userData = userDoc.data();
-            setPhoto(userData.photo); // Define a URL da foto do usuário no estado
-            console.log("Valor de photo:", userData.photo);
+            setPhoto(userData.photoURL);
           } else {
-            console.log("Documento do usuário não encontrado no Firestore.");
+            console.log('Documento do usuário não encontrado no Firestore.');
           }
         } catch (error) {
-          console.error("Erro ao buscar documento do usuário no Firestore:", error);
+          console.error('Erro ao buscar documento do usuário no Firestore:', error);
         }
       }
     };
     fetchUser();
-  }, [user, db]); // Executa quando `user` ou `db` mudarem
+  }, [user, db, photo]);
 
   return (
-    <Container fluid className="profile-page">
+    <Box sx={{ flexGrow: 1, p: 3 }}>
       <Menu />
-  
-      {/* Main Profile Section */}
-      <Row className="main-section mt-4">
+
+      <Grid container spacing={3} mt={4}>
         {/* User Information Sidebar */}
-        <Col md={3} className="sidebar bg-light p-3 rounded">
-          <div className="profile-info text-center">
-            <img
-              src= {photo}
+        <Grid item xs={12} md={3}>
+          <Paper elevation={3} sx={{ p: 3, textAlign: 'center' }}>
+            <Avatar
+              src={photo}
               alt="Gustavo"
-              className="profile-picture img-fluid rounded-circle mb-3"
-              style={{ maxWidth: '150px' }}
+              sx={{ width: 150, height: 150, mx: 'auto', mb: 2 }}
             />
-            <ul className="list-unstyled profile-options">
-              <li className="mb-2">
-                <Button variant="primary" className="w-100" onClick={() => setCurrentPage("welcome")}>
-                    Home
-                  </Button>
-              </li>
-              <li className="mb-2">
-                <Button variant="primary" className="w-100" onClick={() => setCurrentPage("editarPerfil")}>
-                  Editar Perfil
-                </Button>
-              </li>
-              <li className="mb-2">
-                <Button variant="secondary" className="w-100">
-                  Formas de Pago
-                </Button>
-              </li>
-              <li className="mb-2">
-                <Button variant="info" className="w-100">
-                  Mis Reseñas
-                </Button>
-              </li>
-            </ul>
-          </div>
-        </Col>
-  
+            <Box>
+              <Button
+                variant="contained"
+                fullWidth
+                color="success"
+                sx={{ mb: 2 }}
+                onClick={() => setCurrentPage('welcome')}
+              >
+                Home
+              </Button>
+              <Button
+                variant="contained"
+                fullWidth
+                color="success"
+                sx={{ mb: 2 }}
+                onClick={() => setCurrentPage('editarPerfil')}
+              >
+                Editar Perfil
+              </Button>
+              <Button variant="contained" fullWidth color="success" sx={{ mb: 2 }}>
+                Formas de Pago
+              </Button>
+              <Button variant="contained" fullWidth color="success">
+                Mis Reseñas
+              </Button>
+            </Box>
+          </Paper>
+        </Grid>
+
         {/* Main Content Section */}
-        <Col md={8} className="content">
-        {view}
-        </Col>
-      </Row>
-    </Container>
+        <Grid item xs={12} md={8}>
+          {view}
+        </Grid>
+      </Grid>
+    </Box>
   );
 }
 

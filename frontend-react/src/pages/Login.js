@@ -1,16 +1,20 @@
 import React, { useState } from "react";
 import "./styles/Login.css";
-import { useNavigate } from "react-router-dom";
-import {  GoogleAuthProvider,  OAuthProvider,  signInWithPopup,  signInWithEmailAndPassword } from "firebase/auth";
-import { auth } from "../firebase/FirebaseConfig";
-import RegisterPopup from "../components/RegisterPopup";
-import { Button, Form, Container, Row, Col } from "react-bootstrap";
+import { GoogleAuthProvider, OAuthProvider, signInWithPopup, signInWithEmailAndPassword } from "firebase/auth";
 import { getFirestore, doc, setDoc } from "firebase/firestore";
+import { auth } from "../firebase/FirebaseConfig";
+import { useNavigate } from "react-router-dom";
+import { TextField, Button, Container, Grid, Typography, Box } from "@mui/material";
+import AccountTypePopup from "../components/AccountTypePopup";
+import ClientRegisterPopup from "../components/ClientRegisterPopup";
+import PsychologistRegisterPopup from "../components/PsychologistRegisterPopup.js";
 
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [showRegisterPopup, setShowRegisterPopup] = useState(false);
+  const [showAccountTypePopup, setAccountTypePopup] = useState(false);
+  const [showClientRegisterPopup, setClientRegisterPopup] = useState(false);
+  const [showPsychologistRegisterPopup, setPsychologistRegisterPopup] = useState(false);
   const navigate = useNavigate();
   const db = getFirestore();
 
@@ -27,6 +31,17 @@ const Login = () => {
     }
   };
 
+  //Send user to the correct form according to their choice
+  const handleSelection = (type) => {
+    if (type == "client"){
+      setClientRegisterPopup(true)
+      setAccountTypePopup(false)
+    }
+    if (type == "psychologist"){
+      setPsychologistRegisterPopup(true)
+      setAccountTypePopup(false)      
+    }
+  }
 
   // Login com Email e Senha
   const handleEmailLogin = async (e) => {
@@ -34,7 +49,6 @@ const Login = () => {
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       console.log("Usuário logado com email:", userCredential.user);
-
 
       // Criar documento no Firestore para o usuário logado
       await createUserDocument(userCredential.user);
@@ -78,86 +92,113 @@ const Login = () => {
   };
 
   return (
-    <Container fluid className="login-page">
-      <Row className="justify-content-center align-items-center vh-100">
-        <Col md={6} lg={4}>
-          <div className="text-center mb-4">
+    <Container maxWidth="lg" className="login-page">
+      <Grid container spacing={3} alignItems="center" justifyContent="center" style={{ minHeight: "100vh" }}>
+        <Grid item xs={12} md={6} lg={4}>
+          <Box textAlign="center" mb={4}>
             <img
               src="/images/Logo.png"
               alt="Equilibria Logo"
-              className="mb-3"
               style={{ maxWidth: "150px" }}
+              className="mb-3"
             />
-            <h2>Bienvenido a Equilibria</h2>
-          </div>
-          <Form onSubmit={handleEmailLogin}>
-            <Form.Group className="mb-3" controlId="formBasicEmail">
-              <Form.Control
-                type="email"
-                placeholder="Please login to your account"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-              />
-            </Form.Group>
-            <Form.Group className="mb-3" controlId="formBasicPassword">
-              <Form.Control
-                type="password"
-                placeholder="Contraseña"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
-            </Form.Group>
-            <Button variant="primary" type="submit" className="w-100 mb-3">
+            <Typography variant="h4" component="h2">
+              Bienvenido a Equilibria
+            </Typography>
+          </Box>
+          <form onSubmit={handleEmailLogin}>
+            <TextField
+              fullWidth
+              variant="outlined"
+              label="Email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              margin="normal"
+            />
+            <TextField
+              fullWidth
+              variant="outlined"
+              label="Contraseña"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              margin="normal"
+            />
+            <Button
+              variant="contained"
+              color="primary"
+              type="submit"
+              fullWidth
+              sx={{ mt: 2, mb: 2 }}
+            >
               Iniciar sesión
             </Button>
-          </Form>
-          <div className="text-center">
+          </form>
+          <Box textAlign="center">
             <a href="/forgot-password" className="text-decoration-none">
               ¿Has olvidado la contraseña?
             </a>
-          </div>
-        </Col>
+          </Box>
+        </Grid>
 
-        <Col md={6} lg={4} className="info-section mt-5 mt-md-0">
-          <h2>Tu Apoyo Psicológico, Paso a Paso</h2>
-          <p>
-            Equilibria es una plataforma online que conecta a personas con
-            psicólogos cualificados de manera fácil y segura. Ofrecemos
-            consultas virtuales adaptadas a tus necesidades, permitiendo elegir
-            al profesional que mejor se ajuste a tu situación. Para empezar,
-            simplemente crea una cuenta, explora los perfiles de nuestros
-            psicólogos y agenda tu consulta en el horario que prefieras. Todas
-            las sesiones se realizan de manera segura, garantizando
-            confidencialidad, comodidad desde cualquier lugar. Nuestro objetivo
-            es facilitar el acceso a un apoyo psicológico de calidad.
-          </p>
-          <Button
-            variant="success"
-            className="w-100 mt-3"
-            onClick={() => setShowRegisterPopup(true)}
-          >
-            Crear nueva cuenta
-          </Button>
-        </Col>
+        <Grid item xs={12} md={6} lg={4}>
+          <Box className="info-section">
+            <Typography variant="h5" component="h2" gutterBottom>
+              Tu Apoyo Psicológico, Paso a Paso
+            </Typography>
+            <Typography variant="body1" paragraph>
+              Equilibria es una plataforma online que conecta a personas con
+              psicólogos cualificados de manera fácil y segura. Ofrecemos
+              consultas virtuales adaptadas a tus necesidades, permitiendo elegir
+              al profesional que mejor se ajuste a tu situación. Para empezar,
+              simplemente crea una cuenta, explora los perfiles de nuestros
+              psicólogos y agenda tu consulta en el horario que prefieras. Todas
+              las sesiones se realizan de manera segura, garantizando
+              confidencialidad, comodidad desde cualquier lugar. Nuestro objetivo
+              es facilitar el acceso a un apoyo psicológico de calidad.
+            </Typography>
+            <Button
+              variant="contained"
+              color="success"
+              fullWidth
+              sx={{ mt: 2 }}
+              onClick={() => setAccountTypePopup(true)}
+            >
+              Crear nueva cuenta
+            </Button>
+          </Box>
+        </Grid>
 
-        <Col xs={12} className="social-login-section mt-4 text-center">
+        <Grid item xs={12} className="social-login-section" textAlign="center">
           <Button
-            variant="outline-danger"
-            className="me-2"
+            variant="outlined"
+            color="error"
+            sx={{ mr: 2 }}
             onClick={handleGoogleLogin}
           >
             Login con Google
           </Button>
-          <Button variant="outline-primary" onClick={handleMicrosoftLogin}>
+          <Button
+            variant="outlined"
+            color="primary"
+            onClick={handleMicrosoftLogin}
+          >
             Login con Microsoft
           </Button>
-        </Col>
-      </Row>
+        </Grid>
+      </Grid>
 
-      {showRegisterPopup && (
-        <RegisterPopup onClose={() => setShowRegisterPopup(false)} />
+      {showAccountTypePopup && (
+        <AccountTypePopup onClose={() => setAccountTypePopup(false)} onSelect={handleSelection}/>
+      )}
+      {showClientRegisterPopup && (
+        <ClientRegisterPopup onClose={() => setClientRegisterPopup(false)} />
+      )}
+      {showPsychologistRegisterPopup && (
+        <PsychologistRegisterPopup onClose={() => setPsychologistRegisterPopup(false)} />
       )}
     </Container>
   );
