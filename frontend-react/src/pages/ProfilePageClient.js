@@ -2,9 +2,10 @@ import React, { useEffect, useState } from 'react';
 import { Box, Grid, Avatar, Button, Typography, Paper, CircularProgress } from '@mui/material';
 import Menu from '../components/Menu';
 import Welcome from '../components/Welcome';
-import EditarPerfil from '../components/EditarPerfil';
+import EditarPerfil from '../components/EditarPerfilClient';
 import { useAuth } from '../firebase/Authentication';
 import { getFirestore, doc, getDoc } from 'firebase/firestore';
+
 
 function ProfilePage() {
   const { user } = useAuth();

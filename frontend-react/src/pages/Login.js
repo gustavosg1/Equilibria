@@ -2,12 +2,13 @@ import React, { useState } from "react";
 import "./styles/Login.css";
 import { GoogleAuthProvider, OAuthProvider, signInWithPopup, signInWithEmailAndPassword } from "firebase/auth";
 import { getFirestore, doc, setDoc } from "firebase/firestore";
-import { auth } from "../firebase/FirebaseConfig";
+import { auth } from "../firebase/FirebaseConfig.js";
 import { useNavigate } from "react-router-dom";
 import { TextField, Button, Container, Grid, Typography, Box } from "@mui/material";
-import AccountTypePopup from "../components/AccountTypePopup";
-import ClientRegisterPopup from "../components/ClientRegisterPopup";
+import AccountTypePopup from "../components/AccountTypePopup.js";
+import ClientRegisterPopup from "../components/ClientRegisterPopup.js";
 import PsychologistRegisterPopup from "../components/PsychologistRegisterPopup.js";
+import { getDoc } from "firebase/firestore";
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -49,11 +50,20 @@ const Login = () => {
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       console.log("Usuário logado com email:", userCredential.user);
+      const user = userCredential.user;
 
-      // Criar documento no Firestore para o usuário logado
-      await createUserDocument(userCredential.user);
+      const psychologistDoc = await getDoc(doc(db, "psychologist", user.uid));
+      if (psychologistDoc.exists()) { // O usuário é um psicólogo
+        console.log("Usuário logado como psicolgo:", userCredential.user);
+        navigate("/Dashboard");
 
-      navigate("/Perfil");
+      } else {
+        const userDoc = await getDoc(doc(db, "users", user.uid));
+        if (userDoc.exists()) { // O usuário é um cliente
+          navigate("/Perfil");
+        }
+      }
+      
     } catch (error) {
       console.error("Erro ao fazer login com email:", error);
     }
