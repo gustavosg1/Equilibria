@@ -1,10 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { Box, Avatar, Button, Typography, Paper, CircularProgress, Grid2 } from '@mui/material';
-import Menu from '../components/Menu';
-import Welcome from '../components/Welcome';
+
 import { useAuth } from '../firebase/Authentication';
 import { getFirestore, doc, getDoc } from 'firebase/firestore';
+
+import Menu from '../components/Menu';
+import Welcome from '../components/ClientWelcome';
 import PsychologistProfile from '../components/PsychologistProfile';
+import EditarPerfilPsicolog from '../components/EditarPerfilPsicolog';
 
 function ProfilePagePsychologist() {
   const { user } = useAuth();
@@ -20,16 +23,19 @@ function ProfilePagePsychologist() {
       const photoURL = docSnap.data().photoURL;
       setPhoto(`${photoURL}?t=${Date.now()}`);
     } else {
-      console.error('Documento do usuário não encontrado!');
+      console.error('Picture not found!');
     }
   }
 
+ 
   let view;
 
   if (currentPage === 'welcome') {
     view = <Welcome />;
   } else if (currentPage === 'perfil') {
-    view = <PsychologistProfile onPhotoUpdate={updatePhoto} />;
+    view = <PsychologistProfile onPhotoUpdate={updatePhoto} onSelect={setCurrentPage}/>;
+  } else if (currentPage === 'editarPerfil') {
+    view = <EditarPerfilPsicolog/>;
   } else {
     view = <Welcome />;
   }
@@ -38,15 +44,24 @@ function ProfilePagePsychologist() {
     const fetchUser = async () => {
       if (user) {
         try {
-          const userDocRef = doc(db, 'users', user.uid);
-          const userDoc = await getDoc(userDocRef);
+          let userDocRef = doc(db, 'users', user.uid);
+          let userDoc = await getDoc(userDocRef);
 
           if (userDoc.exists()) {
             const userData = userDoc.data();
             setPhoto(userData.photoURL);
           } else {
             console.log('Documento do usuário não encontrado no Firestore.');
+
+            userDocRef = doc(db, 'psychologist', user.uid);
+            userDoc = await getDoc(userDocRef);
+
+            if (userDoc.exists()) {
+              const userData = userDoc.data();
+              setPhoto(userData.photoURL);
+            }
           }
+
         } catch (error) {
           console.error('Erro ao buscar documento do usuário no Firestore:', error);
         }

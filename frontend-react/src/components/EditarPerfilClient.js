@@ -13,6 +13,7 @@ function EditarPerfil({ onPhotoUpdate }) {
   const db = getFirestore();
   const auth = getAuth();
   const storage = getStorage();
+  const userData = {};
 
   const handleFotoChange = (e) => {
     setFoto(e.target.files[0]);
@@ -32,15 +33,16 @@ function EditarPerfil({ onPhotoUpdate }) {
           downloadURL = await getDownloadURL(storageRef);
         }
 
+        if (name) userData.name = name;
+        if (birthDate) userData.birthDate = birthDate;
+        if (photo) userData.photoURL = downloadURL || null;
+
         await setDoc(
           doc(db, 'users', uid),
-          {
-            name: name,
-            birthDate: birthDate,
-            photoURL: downloadURL || null,
-          },
+          userData,
           { merge: true }
         );
+
         setShowModal(true);
 
         if (onPhotoUpdate) {

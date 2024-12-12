@@ -15,23 +15,31 @@ function Welcome(){
           if (user) {
             try {
               // Referencia ao documento do usuário no Firestore
-              const userDocRef = doc(db, "users", user.uid);
-              const userDoc = await getDoc(userDocRef);
+              let userDocRef = doc(db, "users", user.uid);
+              let userDoc = await getDoc(userDocRef);
     
               if (userDoc.exists()) {
                 const userData = userDoc.data();
                 setUserName(userData.name); // Define o nome do usuário no estado
               } else {
-                console.log("Documento do usuário não encontrado no Firestore.");
+                console.log("Document not found in user database.");
+
+                userDocRef = doc(db, "psychologist", user.uid);
+                userDoc = await getDoc(userDocRef);
+                if (userDoc.exists()) {
+                  const userData = userDoc.data();
+                  setUserName(userData.name); // Define o nome do usuário no estado                
+                }
               }
             } catch (error) {
-              console.error("Erro ao buscar documento do usuário no Firestore:", error);
+              console.error("Document not found neither in user nor in psychologist database:", error);
             }
           }
         };
     
         fetchUserName();
       }, [user, db]); // Executa quando `user` ou `db` mudarem
+
 
     return(
         <Col>

@@ -1,18 +1,21 @@
-import React, { useState } from 'react';
-import { Box, TextField, Button, Typography, Modal, Avatar, Grid } from '@mui/material';
+import React, { useState, memo, useCallback } from 'react';
+import { Box, TextField, Button, Typography, Modal, Avatar, Grid, FormControl, FormLabel } from '@mui/material';
 import { getFirestore, doc, setDoc } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
-function EditarPerfil({ onPhotoUpdate }) {
+function EditarPerfilPsicolog({ onPhotoUpdate }) {
   const [name, setNome] = useState('');
   const [birthDate, setDataNascimento] = useState('');
   const [photo, setFoto] = useState(null);
+  const [description, setDescription] = useState('');
+  const [studiesList, setStudiesList] = useState([{ id: 1, course: '', startDate: '', endDate: '', school: '' }]);
   const [showModal, setShowModal] = useState(false);
 
   const db = getFirestore();
   const auth = getAuth();
   const storage = getStorage();
+  const userData = {};
 
   const handleFotoChange = (e) => {
     setFoto(e.target.files[0]);
@@ -32,15 +35,18 @@ function EditarPerfil({ onPhotoUpdate }) {
           downloadURL = await getDownloadURL(storageRef);
         }
 
+        if (name) userData.name = name;
+        if (birthDate) userData.birthDate = birthDate;
+        if (photo) userData.photoURL = downloadURL || null;
+        if (description) userData.description = description;
+        if (studiesList) userData.studies = studiesList;
+
         await setDoc(
-          doc(db, 'users', uid),
-          {
-            name: name,
-            birthDate: birthDate,
-            photoURL: downloadURL || null,
-          },
+          doc(db, 'psychologist', uid),
+          userData,
           { merge: true }
         );
+
         setShowModal(true);
 
         if (onPhotoUpdate) {
@@ -54,12 +60,67 @@ function EditarPerfil({ onPhotoUpdate }) {
     }
   };
 
+  const handleStudyChange = useCallback((id, field, value) => {
+    setStudiesList((prevStudies) =>
+      prevStudies.map((study) =>
+        study.id === id ? { ...study, [field]: value } : study
+      )
+    );
+  }, []);
+
+  const addStudiesBox = () => {
+    setStudiesList((prevStudies) => [
+      ...prevStudies,
+      { id: Date.now(), course: '', startDate: '', endDate: '', school: '' }
+    ]);
+  };
+
+  const StudiesBox = memo(({ id, study, handleStudyChange }) => (
+    <Box key={id} sx={{ marginTop: 2, border: '1px solid #ccc', padding: 2, borderRadius: 2 }}>
+      <Typography variant="h6" sx={{ fontWeight: 'bold' }}>Estudo #{id}</Typography>
+      <TextField
+        fullWidth
+        label="Curso"
+        variant="outlined"
+        margin="normal"
+        value={study.course}
+        onChange={(e) => handleStudyChange(id, 'course', e.target.value)}
+      />
+      <TextField
+        fullWidth
+        label="Data de Início"
+        type="date"
+        InputLabelProps={{ shrink: true }}
+        variant="outlined"
+        margin="normal"
+        value={study.startDate}
+        onChange={(e) => handleStudyChange(id, 'startDate', e.target.value)}
+      />
+      <TextField
+        fullWidth
+        label="Data de Conclusão"
+        type="date"
+        InputLabelProps={{ shrink: true }}
+        variant="outlined"
+        margin="normal"
+        value={study.endDate}
+        onChange={(e) => handleStudyChange(id, 'endDate', e.target.value)}
+      />
+      <TextField
+        fullWidth
+        label="Escola"
+        variant="outlined"
+        margin="normal"
+        value={study.school}
+        onChange={(e) => handleStudyChange(id, 'school', e.target.value)}
+      />
+    </Box>
+  ));
+
   return (
-    <Grid container justifyContent="center" alignItems="center" style={{ minHeight: '100vh' }}>
-      <Grid item xs={12} md={6} lg={4}>
+    <Grid container style={{ minHeight: '100vh' }}>
+      <Grid item xs={12} md={12} lg={12} style={{ width: '75vw' }}>
         <Box
-          component="form"
-          onSubmit={handleSubmit}
           sx={{
             p: 4,
             border: '1px solid #ccc',
@@ -68,27 +129,61 @@ function EditarPerfil({ onPhotoUpdate }) {
             backgroundColor: 'white',
           }}
         >
-          <Typography variant="h4" align="center" gutterBottom>
+          <Typography variant="h4" align="center" gutterBottom sx={{ fontWeight: 'bold' }}>
             Editar Perfil
           </Typography>
-          <TextField
-            fullWidth
-            label="Nome"
-            variant="outlined"
-            margin="normal"
-            value={name}
-            onChange={(e) => setNome(e.target.value)}
-          />
-          <TextField
-            fullWidth
-            label="Data de Nascimento"
-            type="date"
-            InputLabelProps={{ shrink: true }}
-            variant="outlined"
-            margin="normal"
-            value={birthDate}
-            onChange={(e) => setDataNascimento(e.target.value)}
-          />
+
+          <FormControl sx={{ width: '250px' }}>
+            <TextField
+              fullWidth
+              label="Nombre"
+              variant="outlined"
+              margin="normal"
+              value={name}
+              onChange={(e) => setNome(e.target.value)}
+            />
+            <TextField
+              fullWidth
+              label="Fecha de Nacimiento"
+              type="date"
+              InputLabelProps={{ shrink: true }}
+              variant="outlined"
+              margin="normal"
+              value={birthDate}
+              onChange={(e) => setDataNascimento(e.target.value)}
+            />
+          </FormControl>
+
+          <br />
+          <br />
+
+          <FormControl fullWidth>
+            <FormLabel> Escribe una descripción para que los clientes de conozcan!</FormLabel>
+            <TextField
+              fullWidth
+              label="Descripción"
+              variant="outlined"
+              margin="normal"
+              multiline
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+            />
+          </FormControl>
+
+          <Box sx={{ padding: 4 }}>
+            {studiesList.map((study) => (
+              <StudiesBox key={study.id} id={study.id} study={study} handleStudyChange={handleStudyChange} />
+            ))}
+
+            <br />
+
+            <div style={{ display: 'flex', justifyContent: 'center' }}>
+              <Button variant="outlined" onClick={addStudiesBox} style={{ display: 'flex', gap: '8px' }}>
+                Adicionar Estudios <img src="/images/mas.png" alt="Icone-mas" style={{ width: '35px', height: '35px' }} />
+              </Button>
+            </div>
+          </Box>
+
           <Box mt={2} mb={3} textAlign="center">
             <Button variant="contained" component="label">
               Escolher Foto
@@ -105,7 +200,7 @@ function EditarPerfil({ onPhotoUpdate }) {
             )}
           </Box>
           <Box textAlign="center">
-            <Button type="submit" variant="contained" color="primary">
+            <Button type="submit" variant="contained" color="primary" onClick={handleSubmit}>
               Salvar
             </Button>
           </Box>
@@ -156,4 +251,4 @@ function EditarPerfil({ onPhotoUpdate }) {
   );
 }
 
-export default EditarPerfil;
+export default EditarPerfilPsicolog;
