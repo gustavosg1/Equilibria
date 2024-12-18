@@ -1,26 +1,44 @@
-import React, { useState, memo, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Box, TextField, Button, Typography, Modal, Avatar, Grid, FormControl, FormLabel } from '@mui/material';
-import { getFirestore, doc, setDoc } from 'firebase/firestore';
+import { getFirestore, doc, setDoc, getDoc } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 function EditarPerfilPsicolog({ onPhotoUpdate }) {
   const [name, setNome] = useState('');
   const [birthDate, setDataNascimento] = useState('');
-  const [photo, setFoto] = useState(null);
+  const [photo, setPhoto] = useState(null);
   const [description, setDescription] = useState('');
-  const [studiesList, setStudiesList] = useState([{ id: 1, course: '', startDate: '', endDate: '', school: '' }]);
+  const [studiesList, setStudiesList] = useState([]);
+  const [nextId, setNextId] = useState(1); // Para IDs únicos
   const [showModal, setShowModal] = useState(false);
 
   const db = getFirestore();
   const auth = getAuth();
   const storage = getStorage();
-  const userData = {};
 
+  // Atualizar foto
   const handleFotoChange = (e) => {
-    setFoto(e.target.files[0]);
+    setPhoto(e.target.files[0]);
   };
 
+  // Adicionar novo box de estudo
+  const addStudiesBox = () => {
+    setStudiesList((prev) => [
+      ...prev,
+      { id: nextId, course: '', startDate: '', endDate: '', school: '' },
+    ]);
+    setNextId((prevId) => prevId + 1);
+  };
+
+  // Atualizar um campo específico do estudo
+  const handleStudyChange = (id, field, value) => {
+    setStudiesList((prev) =>
+      prev.map((study) => (study.id === id ? { ...study, [field]: value } : study))
+    );
+  };
+
+  // Salvar no Firestore
   const handleSubmit = async (event) => {
     event.preventDefault();
     try {
@@ -35,23 +53,17 @@ function EditarPerfilPsicolog({ onPhotoUpdate }) {
           downloadURL = await getDownloadURL(storageRef);
         }
 
-        if (name) userData.name = name;
-        if (birthDate) userData.birthDate = birthDate;
-        if (photo) userData.photoURL = downloadURL || null;
-        if (description) userData.description = description;
-        if (studiesList) userData.studies = studiesList;
+        const userData = {
+          name,
+          birthDate,
+          photoURL: downloadURL || null,
+          description,
+          studies: studiesList,
+        };
 
-        await setDoc(
-          doc(db, 'psychologist', uid),
-          userData,
-          { merge: true }
-        );
-
+        await setDoc(doc(db, 'psychologist', uid), userData, { merge: true });
         setShowModal(true);
-
-        if (onPhotoUpdate) {
-          onPhotoUpdate();
-        }
+        if (onPhotoUpdate) onPhotoUpdate();
       } else {
         console.error('Usuário não autenticado');
       }
@@ -60,66 +72,41 @@ function EditarPerfilPsicolog({ onPhotoUpdate }) {
     }
   };
 
-  const handleStudyChange = useCallback((id, field, value) => {
-    setStudiesList((prevStudies) =>
-      prevStudies.map((study) =>
-        study.id === id ? { ...study, [field]: value } : study
-      )
-    );
-  }, []);
+  const getData = async () => {
+    try {
+      const user = auth.currentUser;
+      if (user) {
+        const uid = user.uid;
+        let userInfo ={}
 
-  const addStudiesBox = () => {
-    setStudiesList((prevStudies) => [
-      ...prevStudies,
-      { id: Date.now(), course: '', startDate: '', endDate: '', school: '' }
-    ]);
+        const docSnap = await getDoc(doc(db, 'psychologist', uid));
+          if (docSnap.exists()){
+            userInfo = docSnap.data()
+            
+            setNome(userInfo.name);
+            setDataNascimento(userInfo.birthDate);
+            setDescription(userInfo.description);
+            setPhoto(userInfo.photoURL);
+            setStudiesList(userInfo.studies);
+
+
+          } else {
+            console.error('Usuário no encontrado');
+          }        
+      }
+
+      } catch (error) {
+      console.error('Usuário no autenticado: ', error);
+    }
   };
 
-  const StudiesBox = memo(({ id, study, handleStudyChange }) => (
-    <Box key={id} sx={{ marginTop: 2, border: '1px solid #ccc', padding: 2, borderRadius: 2 }}>
-      <Typography variant="h6" sx={{ fontWeight: 'bold' }}>Estudo #{id}</Typography>
-      <TextField
-        fullWidth
-        label="Curso"
-        variant="outlined"
-        margin="normal"
-        value={study.course}
-        onChange={(e) => handleStudyChange(id, 'course', e.target.value)}
-      />
-      <TextField
-        fullWidth
-        label="Data de Início"
-        type="date"
-        InputLabelProps={{ shrink: true }}
-        variant="outlined"
-        margin="normal"
-        value={study.startDate}
-        onChange={(e) => handleStudyChange(id, 'startDate', e.target.value)}
-      />
-      <TextField
-        fullWidth
-        label="Data de Conclusão"
-        type="date"
-        InputLabelProps={{ shrink: true }}
-        variant="outlined"
-        margin="normal"
-        value={study.endDate}
-        onChange={(e) => handleStudyChange(id, 'endDate', e.target.value)}
-      />
-      <TextField
-        fullWidth
-        label="Escola"
-        variant="outlined"
-        margin="normal"
-        value={study.school}
-        onChange={(e) => handleStudyChange(id, 'school', e.target.value)}
-      />
-    </Box>
-  ));
+  useEffect(() => {
+    getData();
+  }, []);
 
   return (
     <Grid container style={{ minHeight: '100vh' }}>
-      <Grid item xs={12} md={12} lg={12} style={{ width: '75vw' }}>
+      <Grid item xs={12} style={{ width: '75vw' }}>
         <Box
           sx={{
             p: 4,
@@ -129,122 +116,135 @@ function EditarPerfilPsicolog({ onPhotoUpdate }) {
             backgroundColor: 'white',
           }}
         >
-          <Typography variant="h4" align="center" gutterBottom sx={{ fontWeight: 'bold' }}>
+          <Typography variant="h4" align="center" gutterBottom>
             Editar Perfil
           </Typography>
 
-          <FormControl sx={{ width: '250px' }}>
+          {/* Nome e Data de Nascimento */}
+          <FormControl fullWidth sx={{ mb: 2 }}>
             <TextField
-              fullWidth
-              label="Nombre"
+              label="Nome"
               variant="outlined"
-              margin="normal"
               value={name}
               onChange={(e) => setNome(e.target.value)}
+              margin="normal"
             />
             <TextField
-              fullWidth
-              label="Fecha de Nacimiento"
+              label="Data de Nascimento"
               type="date"
               InputLabelProps={{ shrink: true }}
               variant="outlined"
-              margin="normal"
               value={birthDate}
               onChange={(e) => setDataNascimento(e.target.value)}
+              margin="normal"
             />
           </FormControl>
 
-          <br />
-          <br />
-
-          <FormControl fullWidth>
-            <FormLabel> Escribe una descripción para que los clientes de conozcan!</FormLabel>
+          {/* Descrição */}
+          <FormControl fullWidth sx={{ mb: 2 }}>
+            <FormLabel>Descrição</FormLabel>
             <TextField
-              fullWidth
-              label="Descripción"
-              variant="outlined"
-              margin="normal"
               multiline
+              rows={3}
+              variant="outlined"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
+              margin="normal"
             />
           </FormControl>
 
-          <Box sx={{ padding: 4 }}>
-            {studiesList.map((study) => (
-              <StudiesBox key={study.id} id={study.id} study={study} handleStudyChange={handleStudyChange} />
-            ))}
-
-            <br />
-
-            <div style={{ display: 'flex', justifyContent: 'center' }}>
-              <Button variant="outlined" onClick={addStudiesBox} style={{ display: 'flex', gap: '8px' }}>
-                Adicionar Estudios <img src="/images/mas.png" alt="Icone-mas" style={{ width: '35px', height: '35px' }} />
-              </Button>
-            </div>
-          </Box>
-
-          <Box mt={2} mb={3} textAlign="center">
+          {/* Foto */}
+          <Box textAlign="center" mb={2}>
             <Button variant="contained" component="label">
               Escolher Foto
               <input type="file" hidden onChange={handleFotoChange} />
             </Button>
             {photo && (
-              <Box mt={2} textAlign="center">
-                <Avatar
-                  alt="Foto do Perfil"
-                  src={URL.createObjectURL(photo)}
-                  sx={{ width: 100, height: 100, margin: 'auto' }}
-                />
-              </Box>
+              <Avatar
+                src={typeof photo === 'string' ? photo : URL.createObjectURL(photo)}
+                sx={{ width: 100, height: 100, margin: 'auto', mt: 2 }}
+              />
             )}
           </Box>
-          <Box textAlign="center">
-            <Button type="submit" variant="contained" color="primary" onClick={handleSubmit}>
+
+          {/* Estudos */}
+          {studiesList.map((study) => (
+            <Box key={study.id} sx={{ border: '1px solid gray', borderRadius: 2, p: 2, mb: 2 }}>
+              <Typography variant="h6">Estudo #{study.id}</Typography>
+              <TextField
+                fullWidth
+                label="Curso"
+                value={study.course}
+                onChange={(e) => handleStudyChange(study.id, 'course', e.target.value)}
+                margin="normal"
+              />
+              <TextField
+                fullWidth
+                label="Data de Início"
+                type="date"
+                InputLabelProps={{ shrink: true }}
+                value={study.startDate}
+                onChange={(e) => handleStudyChange(study.id, 'startDate', e.target.value)}
+                margin="normal"
+              />
+              <TextField
+                fullWidth
+                label="Data de Conclusão"
+                type="date"
+                InputLabelProps={{ shrink: true }}
+                value={study.endDate}
+                onChange={(e) => handleStudyChange(study.id, 'endDate', e.target.value)}
+                margin="normal"
+              />
+              <TextField
+                fullWidth
+                label="Escola"
+                value={study.school}
+                onChange={(e) => handleStudyChange(study.id, 'school', e.target.value)}
+                margin="normal"
+              />
+            </Box>
+          ))}
+
+            <br></br>
+
+          <Box sx={{display: "flex", justifyContent: "center" }}>
+            <Button variant="outlined" onClick={addStudiesBox} sx={{ mr: 2 }}>
+              Adicionar Estudos <img src="/images/mas.png" style={{width: "35px", height: "35px", marginLeft: "10px"}}/>
+            </Button>
+          </Box>
+
+            <br></br>
+            <br></br>
+          
+          <Box sx={{display: "flex", justifyContent: "center" }}>
+
+            <Button variant="contained" color="primary" onClick={handleSubmit}>
               Salvar
             </Button>
           </Box>
         </Box>
       </Grid>
 
-      <Modal
-        open={showModal}
-        onClose={() => setShowModal(false)}
-        aria-labelledby="modal-sucesso-titulo"
-        aria-describedby="modal-sucesso-descricao"
-      >
+      {/* Modal */}
+      <Modal open={showModal} onClose={() => setShowModal(false)}>
         <Box
           sx={{
             position: 'absolute',
             top: '50%',
             left: '50%',
             transform: 'translate(-50%, -50%)',
-            width: 300,
             bgcolor: 'background.paper',
             boxShadow: 24,
             p: 4,
             textAlign: 'center',
           }}
         >
-          <Typography id="modal-sucesso-titulo" variant="h6" component="h2">
-            Éxito
-          </Typography>
-          <Typography id="modal-sucesso-descricao" sx={{ mt: 2 }}>
-            Dados guardados com êxito
-          </Typography>
-          <Box mt={3} textAlign="center">
-            <Button
-              variant="contained"
-              onClick={() => {
-                setShowModal(false);
-                if (onPhotoUpdate) {
-                  onPhotoUpdate();
-                }
-              }}
-            >
-              OK
-            </Button>
-          </Box>
+          <Typography variant="h6">Éxito</Typography>
+          <Typography>Dados guardados com sucesso!</Typography>
+          <Button onClick={() => setShowModal(false)} variant="contained" sx={{ mt: 2 }}>
+            OK
+          </Button>
         </Box>
       </Modal>
     </Grid>
