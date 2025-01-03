@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Box, Avatar, Button, Typography, Paper, CircularProgress, Grid2 } from '@mui/material';
+import { Box, Avatar, Button, Typography, Paper, CircularProgress, Grid2, Grid } from '@mui/material';
 
 import { useAuth } from '../firebase/Authentication';
 import { getFirestore, doc, getDoc } from 'firebase/firestore';
@@ -71,12 +71,13 @@ function ProfilePagePsychologist() {
   }, [user, db, photo]);
 
   return (
-    <Box sx={{ flexGrow: 1, p: 3 }}>
+    <Box>
+      {/* Menu */}
       <Menu />
 
-      <Grid2 container spacing={3} mt={4}>
+      <Grid container spacing={3} mt={4}>
         {/* User Information Sidebar */}
-        <Grid2 item xs={12} md={3}>
+        <Grid item xs={12} md={3}>
           <Paper elevation={3} sx={{ p: 3, textAlign: 'center' }}>
             <Avatar
               src={photo}
@@ -107,13 +108,13 @@ function ProfilePagePsychologist() {
               </Button>
             </Box>
           </Paper>
-        </Grid2>
+        </Grid>
 
         {/* Main Content Section */}
         <Grid2 item xs={12} md={8}>
           {view}
         </Grid2>
-      </Grid2>
+      </Grid>
     </Box>
   );
 }

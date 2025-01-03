@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Box, TextField, Button, Typography, Modal, Avatar, Grid, FormControl, FormLabel } from '@mui/material';
+import { Box, TextField, Button, Typography, Modal, Avatar, Grid, FormControl, FormLabel, Switch } from '@mui/material';
 import { getFirestore, doc, setDoc, getDoc } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
@@ -10,8 +10,12 @@ function EditarPerfilPsicolog({ onPhotoUpdate }) {
   const [photo, setPhoto] = useState(null);
   const [description, setDescription] = useState('');
   const [studiesList, setStudiesList] = useState([]);
-  const [nextId, setNextId] = useState(1); // Para IDs únicos
+  const [visible, setVisible] = useState(false);
+
+  const [nextId, setNextId] = useState(1); 
   const [showModal, setShowModal] = useState(false);
+
+  
 
   const db = getFirestore();
   const auth = getAuth();
@@ -59,6 +63,7 @@ function EditarPerfilPsicolog({ onPhotoUpdate }) {
           photoURL: downloadURL || null,
           description,
           studies: studiesList,
+          visible,
         };
 
         await setDoc(doc(db, 'psychologist', uid), userData, { merge: true });
@@ -88,7 +93,7 @@ function EditarPerfilPsicolog({ onPhotoUpdate }) {
             setDescription(userInfo.description);
             setPhoto(userInfo.photoURL);
             setStudiesList(userInfo.studies);
-
+            
 
           } else {
             console.error('Usuário no encontrado');
@@ -104,6 +109,7 @@ function EditarPerfilPsicolog({ onPhotoUpdate }) {
     getData();
   }, []);
 
+  
   return (
     <Grid container style={{ minHeight: '100vh' }}>
       <Grid item xs={12} style={{ width: '75vw' }}>
@@ -119,6 +125,17 @@ function EditarPerfilPsicolog({ onPhotoUpdate }) {
           <Typography variant="h4" align="center" gutterBottom>
             Editar Perfil
           </Typography>
+
+          <Box sx={{display: "flex", justifyContent: "flex-end",}}>
+            <p  style={{ paddingTop: "5px"}}> Perfil visible para clientes: {visible ? 'SÍ' : 'NO'}</p>
+
+            <Switch
+              checked={visible}
+              onChange={(event) => setVisible(event.target.checked) }
+              inputProps={{ 'aria-label': 'controlled' }}
+              sx={{ textAlign: "right"}}/>
+
+          </Box>
 
           {/* Nome e Data de Nascimento */}
           <FormControl fullWidth sx={{ mb: 2 }}>

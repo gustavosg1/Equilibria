@@ -57,7 +57,8 @@ function ProfilePage() {
   }, [user, db, photo]);
 
   return (
-    <Box sx={{ flexGrow: 1, p: 3 }}>
+    <Box>
+      {/* Menu */}
       <Menu />
 
       <Grid container spacing={3} mt={4}>

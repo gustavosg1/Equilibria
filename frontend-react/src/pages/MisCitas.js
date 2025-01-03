@@ -1,49 +1,82 @@
 import React from 'react';
-import './styles/MisCitas.css';
+import { AppBar, Toolbar, Box, Typography, Button, Container, Card, CardMedia, CardContent, Grid, Tabs, Tab } from '@mui/material';
 import Menu from '../components/Menu';
 
+// Dados de exemplo das consultas
 const appointments = [
   {
     psychologist: {
       name: "Marco Fernandez",
-      imgSrc: "images/psicolog.png", // Replace with actual image path or URL
+      imgSrc: "images/psicolog.png", // Substitua com o caminho real
     },
     date: "16/10/2024",
     time: "15:00",
   },
-  // More appointments can be added here
+  // Adicione mais consultas aqui
 ];
 
+// Componente de Card para cada consulta
 const AppointmentCard = ({ appointment }) => (
-  <div className="appointment-card">
-    <img src={appointment.psychologist.imgSrc} alt={`${appointment.psychologist.name}`} className="psychologist-image" />
-    <div className="appointment-info">
-      <p><strong>Psicologo:</strong> {appointment.psychologist.name}</p>
-      <p><strong>Fecha:</strong> {appointment.date}</p>
-      <p><strong>Hora:</strong> {appointment.time}</p>
-      <button className="video-session-button">Empezar Videoconferencia</button>
-      <button className="cancel-button">Anular</button>
-    </div>
-  </div>
+  <Card sx={{ display: 'flex', mb: 2, boxShadow: 3 }}>
+    <CardMedia
+      component="img"
+      sx={{ width: 150, height: 150, borderRadius: '50%', objectFit: 'cover', m: 2 }}
+      image={appointment.psychologist.imgSrc}
+      alt={appointment.psychologist.name}
+    />
+    <Box sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', flexGrow: 1, p: 2 }}>
+      <Typography variant="h6"><strong>Psicólogo:</strong> {appointment.psychologist.name}</Typography>
+      <Typography variant="body1"><strong>Fecha:</strong> {appointment.date}</Typography>
+      <Typography variant="body1" sx={{ mb: 2 }}><strong>Hora:</strong> {appointment.time}</Typography>
+      <Box sx={{ display: 'flex', gap: 2 }}>
+        <Button variant="contained" color="success">
+          Empezar Videoconferencia
+        </Button>
+        <Button variant="outlined" color="error">
+          Anular
+        </Button>
+      </Box>
+    </Box>
+  </Card>
 );
 
 const MisCitas = () => {
-  return (
-    <div className="app-container">
-      <Menu/>
+  const [tabValue, setTabValue] = React.useState(0);
 
-      <div className="appointments-container">
-        <div className="tabs">
-          <button className="tab-button">Citas Futuras</button>
-          <button className="tab-button">Citas Pasadas</button>
-        </div>
-        <div className="appointment-list">
+  const handleChange = (event, newValue) => {
+    setTabValue(newValue);
+  };
+
+  return (
+    <Box>
+      {/* Menu */}
+      <Menu />
+
+      {/* Container Principal */}
+      <Container sx={{ mt: 4 }}>
+        {/* Tabs para Citas Futuras e Citas Pasadas */}
+        <Tabs
+          value={tabValue}
+          onChange={handleChange}
+          centered
+          textColor="primary"
+          indicatorColor="primary"
+          sx={{ mb: 3 }}
+        >
+          <Tab label="Citas Futuras" />
+          <Tab label="Citas Pasadas" />
+        </Tabs>
+
+        {/* Lista de Consultas */}
+        <Grid container spacing={2}>
           {appointments.map((appointment, index) => (
-            <AppointmentCard key={index} appointment={appointment} />
+            <Grid item xs={12} key={index}>
+              <AppointmentCard appointment={appointment} />
+            </Grid>
           ))}
-        </div>
-      </div>
-    </div>
+        </Grid>
+      </Container>
+    </Box>
   );
 };
 
