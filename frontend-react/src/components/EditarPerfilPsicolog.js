@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Box, TextField, Button, Typography, Modal, Avatar, Grid, FormControl, FormLabel, Switch, InputAdornment, InputProps } from '@mui/material';
-import { getFirestore, doc, setDoc, getDoc } from 'firebase/firestore';
+import { Box, Autocomplete, TextField, Chip, Button, Typography, Modal, Avatar, Grid, FormControl, FormLabel, Switch, InputAdornment, } from '@mui/material';
+import { getFirestore, doc, setDoc, getDoc, collection, getDocs } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
@@ -11,12 +11,13 @@ function EditarPerfilPsicolog({ onPhotoUpdate }) {
   const [description, setDescription] = useState('');
   const [studiesList, setStudiesList] = useState([]);
   const [visible, setVisible] = useState(false);
-  const [price, setPrice] = useState('')
+  const [price, setPrice] = useState('');
+  const [therapy, setTherapy] = useState([]);
  
   const [nextId, setNextId] = useState(1); 
   const [showModal, setShowModal] = useState(false);
 
-  
+  const [specialties, setSpecialties] = useState([])  
 
   const db = getFirestore();
   const auth = getAuth();
@@ -65,7 +66,8 @@ function EditarPerfilPsicolog({ onPhotoUpdate }) {
           description,
           studies: studiesList,
           visible,
-          price
+          price,
+          therapy
         };
 
         await setDoc(doc(db, 'psychologist', uid), userData, { merge: true });
@@ -78,6 +80,25 @@ function EditarPerfilPsicolog({ onPhotoUpdate }) {
       console.error('Erro ao atualizar o perfil do usuário: ', error);
     }
   };
+
+  
+
+  async function accessTherapies () {
+
+    const therapiesCollection = collection(db, 'therapies');
+    try {
+      const snapshot = await getDocs(therapiesCollection);
+      const therapies = snapshot.docs.map((doc) =>
+        doc.data().name || "");
+      
+      setSpecialties(therapies);      
+      
+    } catch (error) {
+      console.error('Erro ao buscar documentos:', error);
+    }
+  }
+
+  
 
   const getData = async () => {
     try {
@@ -95,6 +116,9 @@ function EditarPerfilPsicolog({ onPhotoUpdate }) {
             setDescription(userInfo.description);
             setPhoto(userInfo.photoURL);
             setStudiesList(userInfo.studies);
+            setVisible(userInfo.visible);
+            setPrice(userInfo.price);
+            setTherapy(userInfo.therapy);
             
 
           } else {
@@ -109,6 +133,7 @@ function EditarPerfilPsicolog({ onPhotoUpdate }) {
 
   useEffect(() => {
     getData();
+    accessTherapies();
   }, []);
 
   
@@ -172,6 +197,40 @@ function EditarPerfilPsicolog({ onPhotoUpdate }) {
             />
           </FormControl>
 
+          {/* Especilidades */}
+          <FormControl sx={{ mb: 2,width: '100%' }}>
+          <FormLabel></FormLabel>
+          <Autocomplete
+            multiple
+            
+            options={specialties || []} // Garante que specialties seja um array
+            value={therapy || []} // Garante que therapy seja um array
+            onChange={(event, value) => setTherapy(value)} // Atualiza as seleções
+            getOptionLabel={(option) => option.name || option} // Suporta array de strings ou objetos
+            renderTags={(value, getTagProps) =>
+              value.map((option, index) => (
+                <Chip
+                  key={option.id || option}
+                  label={option.name || option}
+                  {...getTagProps({ index })}
+                  onDelete={() => {
+                    const newOptions = therapy.filter((item) => item !== option);
+                    setTherapy(newOptions);
+                  }}
+                />
+              ))
+            }
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                variant="outlined"
+                label="Especialidades"
+                placeholder="Clique para escolher"
+              />
+            )}
+          />
+        </FormControl>
+
           {/* Precio */}
           <FormControl sx={{ mb: 2 }}>
             <FormLabel>Precio por sesión</FormLabel>
@@ -190,9 +249,6 @@ function EditarPerfilPsicolog({ onPhotoUpdate }) {
                 style: { textAlign: "right" }, // Alinha o texto à direita
               }}
             />
-
-            
-
           </FormControl>
 
 

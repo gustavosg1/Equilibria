@@ -1,7 +1,7 @@
 import React, {useState, useEffect} from 'react';
 import { AppBar, Toolbar, TextField, MenuItem, Select, Box, Card, CardContent, CardMedia, Typography, Grid, Container } from '@mui/material';
 import Menu from '../components/Menu';
-import { getFirestore, doc, getDoc, collection, getDocs } from 'firebase/firestore';
+import { getFirestore, collection, getDocs } from 'firebase/firestore';
 
 function Especialistas(){
 
