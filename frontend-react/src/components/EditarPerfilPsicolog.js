@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Box, TextField, Button, Typography, Modal, Avatar, Grid, FormControl, FormLabel, Switch } from '@mui/material';
+import { Box, TextField, Button, Typography, Modal, Avatar, Grid, FormControl, FormLabel, Switch, InputAdornment, InputProps } from '@mui/material';
 import { getFirestore, doc, setDoc, getDoc } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
@@ -11,7 +11,8 @@ function EditarPerfilPsicolog({ onPhotoUpdate }) {
   const [description, setDescription] = useState('');
   const [studiesList, setStudiesList] = useState([]);
   const [visible, setVisible] = useState(false);
-
+  const [price, setPrice] = useState('')
+ 
   const [nextId, setNextId] = useState(1); 
   const [showModal, setShowModal] = useState(false);
 
@@ -64,6 +65,7 @@ function EditarPerfilPsicolog({ onPhotoUpdate }) {
           description,
           studies: studiesList,
           visible,
+          price
         };
 
         await setDoc(doc(db, 'psychologist', uid), userData, { merge: true });
@@ -159,8 +161,8 @@ function EditarPerfilPsicolog({ onPhotoUpdate }) {
 
           {/* Descrição */}
           <FormControl fullWidth sx={{ mb: 2 }}>
-            <FormLabel>Descrição</FormLabel>
             <TextField
+              label="Descripción"
               multiline
               rows={3}
               variant="outlined"
@@ -169,6 +171,31 @@ function EditarPerfilPsicolog({ onPhotoUpdate }) {
               margin="normal"
             />
           </FormControl>
+
+          {/* Precio */}
+          <FormControl sx={{ mb: 2 }}>
+            <FormLabel>Precio por sesión</FormLabel>
+            <TextField
+              sx={{width:"100px", textAlign:"right"}}
+              variant="outlined"
+              margin="normal"
+              value={price}
+              onChange={(e) =>{
+                const value = e.target.value
+                if (/^\d*$/.test(value)) {
+                setPrice(value)}
+              }}
+              InputProps={{
+                endAdornment: <InputAdornment position="end">,00Є</InputAdornment>, // Adiciona ",00" fixo
+                style: { textAlign: "right" }, // Alinha o texto à direita
+              }}
+            />
+
+            
+
+          </FormControl>
+
+
 
           {/* Foto */}
           <Box textAlign="center" mb={2}>
