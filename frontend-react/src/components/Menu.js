@@ -1,9 +1,10 @@
-import React from 'react';
+import React, {useState, useEffect} from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { signOut } from 'firebase/auth';
-import { auth } from '../firebase/FirebaseConfig';
+import { auth, db } from '../firebase/FirebaseConfig';
 import { AppBar, Toolbar, IconButton, Button, Box } from '@mui/material';
 import { styled } from '@mui/system';
+import {doc, getDoc} from 'firebase/firestore'
 
 // Estilização do AppBar
 const StyledAppBar = styled(AppBar)({
@@ -25,7 +26,25 @@ const StyledLink = styled(Link)({
 });
 
 function Menu() {
+  const [userRole, setUserRole] = useState(null);
   const navigate = useNavigate();
+
+  useEffect(() =>{
+    const checkUserRole = async () => {
+      try{
+        const user = auth.currentUser;
+        if (user){
+          const psicolegDoc = doc(db,'psychologist', user.uid);
+          const userSnapshot = await getDoc(psicolegDoc);
+          setUserRole(userSnapshot.exists() ? 'psychologist' : 'client');
+        }
+      } catch (error){
+        console.log('Error al accedir la base de dades per trobar perfil')
+      }
+    }
+
+    checkUserRole()
+  }, []);
 
   // Função de logout
   async function HandleLogout() {
@@ -37,6 +56,10 @@ function Menu() {
     }
   }
 
+  const pagina = userRole === 'psychologist' ? '/Dashboard' : '/Perfil';
+
+   
+
   return (
     <StyledAppBar position="static">
       <Toolbar>
@@ -47,7 +70,7 @@ function Menu() {
 
         {/* Itens do menu alinhados à direita */}
         <Box sx={{ display: "flex", marginLeft: "auto", alignItems: "center", gap: 2 }}>
-          <StyledLink to="/Perfil">
+          <StyledLink to={pagina}>
             <img src="/images/icono-home.png" alt="Home" style={{ width: '55px', height: '40px', marginRight: '5px' }} />
             Home
           </StyledLink>
