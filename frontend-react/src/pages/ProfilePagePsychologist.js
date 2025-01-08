@@ -33,9 +33,9 @@ function ProfilePagePsychologist() {
   if (currentPage === 'welcome') {
     view = <Welcome />;
   } else if (currentPage === 'perfil') {
-    view = <PsychologistProfile onPhotoUpdate={updatePhoto} onSelect={setCurrentPage}/>;
+    view = <PsychologistProfile onSelect={setCurrentPage}/>;
   } else if (currentPage === 'editarPerfil') {
-    view = <EditarPerfilPsicolog/>;
+    view = <EditarPerfilPsicolog onPhotoUpdate={updatePhoto}/>;
   } else {
     view = <Welcome />;
   }

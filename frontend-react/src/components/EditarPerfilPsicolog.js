@@ -13,11 +13,13 @@ function EditarPerfilPsicolog({ onPhotoUpdate }) {
   const [visible, setVisible] = useState(false);
   const [price, setPrice] = useState('');
   const [therapy, setTherapy] = useState([]);
+  const [chosenLanguages, setChosenLanguages] = useState([])
  
   const [nextId, setNextId] = useState(1); 
   const [showModal, setShowModal] = useState(false);
 
-  const [specialties, setSpecialties] = useState([])  
+  const [specialties, setSpecialties] = useState([]);
+  const [languages, setLanguages] = useState([]);
 
   const db = getFirestore();
   const auth = getAuth();
@@ -67,12 +69,16 @@ function EditarPerfilPsicolog({ onPhotoUpdate }) {
           studies: studiesList,
           visible,
           price,
-          therapy
+          therapy,
+          chosenLanguages
         };
 
         await setDoc(doc(db, 'psychologist', uid), userData, { merge: true });
         setShowModal(true);
-        if (onPhotoUpdate) onPhotoUpdate();
+        if (onPhotoUpdate) {
+          onPhotoUpdate();
+        }
+
       } else {
         console.error('Usuário não autenticado');
       }
@@ -89,9 +95,24 @@ function EditarPerfilPsicolog({ onPhotoUpdate }) {
     try {
       const snapshot = await getDocs(therapiesCollection);
       const therapies = snapshot.docs.map((doc) =>
-        doc.data().name || "");
+        doc.data().name || "").sort((a, b) => a.localeCompare(b));
       
       setSpecialties(therapies);      
+      
+    } catch (error) {
+      console.error('Erro ao buscar documentos:', error);
+    }
+  }
+
+  async function accessLanguages () {
+
+    const languagesCollection = collection(db, 'idiomas');
+    try {
+      const snapshot = await getDocs(languagesCollection);
+      const idioma = snapshot.docs.map((doc) =>
+        doc.data().nombre || "").sort((a, b) => a.localeCompare(b));
+      
+      setLanguages(idioma);      
       
     } catch (error) {
       console.error('Erro ao buscar documentos:', error);
@@ -119,6 +140,7 @@ function EditarPerfilPsicolog({ onPhotoUpdate }) {
             setVisible(userInfo.visible);
             setPrice(userInfo.price);
             setTherapy(userInfo.therapy);
+            setChosenLanguages(userInfo.chosenLanguages);
             
 
           } else {
@@ -134,6 +156,7 @@ function EditarPerfilPsicolog({ onPhotoUpdate }) {
   useEffect(() => {
     getData();
     accessTherapies();
+    accessLanguages();
   }, []);
 
   
@@ -199,24 +222,44 @@ function EditarPerfilPsicolog({ onPhotoUpdate }) {
 
           {/* Especilidades */}
           <FormControl sx={{ mb: 2,width: '100%' }}>
-          <FormLabel></FormLabel>
+            <Autocomplete
+              multiple
+              options={specialties || []} // Garante que specialties seja sempre um array válido
+              value={therapy || []} // Garante que therapy seja sempre um array válido
+              onChange={(event, value) => setTherapy(value)} // Atualiza as seleções corretamente
+              getOptionLabel={(option) => (typeof option === 'string' ? option : option.name || '')} // Lida com strings e objetos
+              renderTags={(value, getTagProps) =>
+                value.map((option, index) => (
+                  <Chip
+                    key={index}
+                    label={typeof option === 'string' ? option : option.name || ''}
+                    {...getTagProps({ index })}
+                  />
+                ))
+              }
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  variant="outlined"
+                  label="Especialidades"
+                  placeholder="Clique para escolher"
+                />
+              )}
+            />
+        </FormControl>
+
+        <FormControl sx={{ mb: 2, width: '100%' }}>
           <Autocomplete
             multiple
-            
-            options={specialties || []} // Garante que specialties seja um array
-            value={therapy || []} // Garante que therapy seja um array
-            onChange={(event, value) => setTherapy(value)} // Atualiza as seleções
-            getOptionLabel={(option) => option.name || option} // Suporta array de strings ou objetos
-            renderTags={(value, getTagProps) =>
+            options={languages || []} 
+            value={chosenLanguages || []}
+            onChange={(event, value) => setChosenLanguages(value)}
+            renderTags={(value = [], getTagProps) =>
               value.map((option, index) => (
                 <Chip
-                  key={option.id || option}
+                  key={option.id || index}
                   label={option.name || option}
                   {...getTagProps({ index })}
-                  onDelete={() => {
-                    const newOptions = therapy.filter((item) => item !== option);
-                    setTherapy(newOptions);
-                  }}
                 />
               ))
             }
@@ -224,7 +267,7 @@ function EditarPerfilPsicolog({ onPhotoUpdate }) {
               <TextField
                 {...params}
                 variant="outlined"
-                label="Especialidades"
+                label="Idiomas"
                 placeholder="Clique para escolher"
               />
             )}
@@ -232,7 +275,7 @@ function EditarPerfilPsicolog({ onPhotoUpdate }) {
         </FormControl>
 
           {/* Precio */}
-          <FormControl sx={{ mb: 2 }}>
+          <FormControl sx={{ mb: 2, display: 'flex', alignItems: 'flex-end' }}>
             <FormLabel>Precio por sesión</FormLabel>
             <TextField
               sx={{width:"100px", textAlign:"right"}}
