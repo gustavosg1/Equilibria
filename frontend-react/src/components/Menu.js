@@ -45,6 +45,7 @@ function Menu() {
 
     checkUserRole()
   }, []);
+  
 
   // Função de logout
   async function HandleLogout() {
