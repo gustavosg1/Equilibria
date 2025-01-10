@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Slider, TextField, MenuItem, Box, Card, CardContent, CardMedia, Typography, Grid, Container, Select, Chip } from '@mui/material';
 import Menu from '../components/Menu';
 import { getFirestore, collection, getDocs } from 'firebase/firestore';
+import Agenda from '../components/Agenda';
 
 function Especialistas() {
   const [psychologists, setPsychologists] = useState([]);
@@ -12,10 +13,14 @@ function Especialistas() {
   const [selectedLanguage, setSelectedLanguage] = useState('');
   const [searchName, setSearchName] = useState('');
 
+  const [open, setOpen] = useState(false);
+  const [psychologistId, setPsychologistId] = useState(null);
+
   const db = getFirestore();
 
   useEffect(() => {
     // Busca psicólogos
+    console.log("Estado de open:", open);
     async function fetchPsychologists() {
       const psychologistCollection = collection(db, 'psychologist');
       try {
@@ -61,6 +66,7 @@ function Especialistas() {
     fetchLanguages();
   }, []);
 
+
   // Atualiza intervalo de preços
   const handlePriceRangeChange = (event, newValue) => {
     setPriceRange(newValue);
@@ -76,7 +82,13 @@ function Especialistas() {
   });
 
   const PsychologistCard = ({ psychologist }) => (
-    <Card sx={{ display: 'flex', mb: 2, p: 2, boxShadow: 3, width: '100%' }}>
+    <Card
+      onClick={() => {
+        console.log("Psychologist ID selecionado:", psychologist.id); // Verifica o ID
+        setPsychologistId(psychologist.id); // Atualiza o ID primeiro
+        setTimeout(() => setOpen(true), 0); // Abre o modal após a atualização do estado
+      }}
+      sx={{ display: 'flex', mb: 2, p: 2, boxShadow: 3, width: '100%' }}>
       <CardMedia
         component="img"
         sx={{ width: 150, height: 150, borderRadius: '50%' }}
@@ -199,6 +211,13 @@ function Especialistas() {
           ))}
         </Grid>
       </Container>
+      {psychologistId && open && (
+        <Agenda
+          psychologistID={psychologistId}
+          open={open}
+          onClose={() => setOpen(false)}
+        />
+      )}
     </Box>
   );
 }

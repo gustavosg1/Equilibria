@@ -68,10 +68,14 @@ function EditarPerfilPsicolog({ onPhotoUpdate }) {
         const uid = user.uid;
 
         let downloadURL = null;
-        if (photo) {
+        if (photo instanceof File) {
+          // Apenas faça o upload se uma nova foto for selecionada
           const storageRef = ref(storage, `profile-pictures/${uid}/${photo.name}`);
           await uploadBytes(storageRef, photo);
           downloadURL = await getDownloadURL(storageRef);
+        } else {
+          // Use a foto atual se nenhuma nova foi selecionada
+          downloadURL = photo;
         }
 
         const userData = {
@@ -335,45 +339,90 @@ function EditarPerfilPsicolog({ onPhotoUpdate }) {
 
             {/* Disponibilidade por dia da semana */}
             <FormLabel>Disponibilidad</FormLabel>
-            <Box sx={{ border: '1px solid #C4C4C4', padding: '10px' }}>
-              {daysOfWeek.map((day, index) => (
-                <FormControl key={index} sx={{ mb: 2, width: '14.2%', padding: '10px' }}>
-                  <Autocomplete
-                    multiple
-                    options={hours || []}  
-                    value={availability[index]?.times || []}
-                    onChange={(event, value) => {
-                      // Atualiza a disponibilidade do dia específico
-                      setAvailability((prev) => {
-                        const updated = [...(prev || [])]; // Garantir que prev é um array válido
-                        if (!updated[index]) {
-                          updated[index] = { day: daysOfWeek[index], times: [] }; // Inicializar o dia se necessário
-                        }
-                        updated[index].times = value;
-                        return updated;
-                      });
-                    }}
-                    renderTags={(value = [], getTagProps) =>
-                      value.map((option, i) => (
-                        <Chip
-                          key={i}
-                          label={option.name || option}
-                          {...getTagProps({ index: i })}
+              <Box sx={{ border: '1px solid #C4C4C4', padding: '10px' }}>
+                {daysOfWeek.map((day, index) => (
+                  <FormControl key={index} sx={{ mb: 2, width: '14.2%', padding: '10px' }}>
+                    <Autocomplete
+                      multiple
+                      options={hours || []}
+                      value={availability[index]?.times || []}
+                      onChange={(event, value) => {
+                        // Atualiza a disponibilidade do dia específico
+                        setAvailability((prev) => {
+                          const updated = [...(prev || [])]; // Garantir que prev é um array válido
+                          if (!updated[index]) {
+                            updated[index] = { day: daysOfWeek[index], times: [] }; // Inicializar o dia se necessário
+                          }
+                          updated[index].times = value;
+                          return updated;
+                        });
+                      }}
+                      renderTags={(value = [], getTagProps) =>
+                        value.map((option, i) => (
+                          <Chip
+                            key={i}
+                            label={option.name || option}
+                            {...getTagProps({ index: i })}
+                          />
+                        ))
+                      }
+                      renderInput={(params) => (
+                        <TextField
+                          {...params}
+                          variant="outlined"
+                          label={day} // Define o nome do dia como label
+                          placeholder="Clique para escolher"
                         />
-                      ))
-                    }
-                    renderInput={(params) => (
-                      <TextField
-                        {...params}
-                        variant="outlined"
-                        label={day} // Define o nome do dia como label
-                        placeholder="Clique para escolher"
-                      />
-                    )}
-                  />
-                </FormControl>
-              ))}
-            </Box>
+                      )}
+                    />
+                    {/* Botão para copiar os horários para todos os outros dias */}
+                    <Button
+                      variant="outlined"
+                      sx={{ mt: 1 }}
+                      onClick={() => {
+                        // Função para copiar os horários para todos os dias
+                        setAvailability((prev) =>
+                          prev.map((availabilityDay, idx) =>
+                            idx === index
+                              ? availabilityDay // Mantém o dia atual inalterado
+                              : {
+                                  ...availabilityDay,
+                                  times: prev[index]?.times || [], // Copia os horários do dia atual
+                                }
+                          )
+                        );
+                      }}
+                    >
+                      Copiar
+                    </Button>
+                    {/* Botão para deletar os horários do dia específico */}
+                    <Button
+                      variant="outlined"
+                      sx={{
+                        mt: 1,
+                        color: 'red',
+                        borderColor: 'red',
+                        '&:hover': {
+                          backgroundColor: '#ffebeb', // Background vermelho claro no hover
+                          borderColor: 'red',
+                        },
+                      }}
+                      onClick={() => {
+                        // Função para deletar os horários do dia específico
+                        setAvailability((prev) => {
+                          const updated = [...(prev || [])];
+                          if (updated[index]) {
+                            updated[index].times = []; // Remove os horários do dia específico
+                          }
+                          return updated;
+                        });
+                      }}
+                    >
+                      Deletar
+                    </Button>
+                  </FormControl>
+                ))}
+              </Box>
 
             <br></br>
 
