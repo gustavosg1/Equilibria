@@ -212,11 +212,13 @@ function Especialistas() {
         </Grid>
       </Container>
       {psychologistId && open && (
-        <Agenda
-          psychologistID={psychologistId}
-          open={open}
-          onClose={() => setOpen(false)}
-        />
+      <Agenda
+        psychologistID={psychologistId}
+        psychologistName={psychologists.find(p => p.id === psychologistId)?.name || ''}
+        psychologistPhotoURL={psychologists.find(p => p.id === psychologistId)?.photoURL || ''}
+        open={open}
+        onClose={() => setOpen(false)}
+      />
       )}
     </Box>
   );

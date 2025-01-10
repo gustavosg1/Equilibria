@@ -1,32 +1,25 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { AppBar, Toolbar, Box, Typography, Button, Container, Card, CardMedia, CardContent, Grid, Tabs, Tab } from '@mui/material';
 import Menu from '../components/Menu';
-
-// Dados de exemplo das consultas
-const appointments = [
-  {
-    psychologist: {
-      name: "Marco Fernandez",
-      imgSrc: "images/psicolog.png", // Substitua com o caminho real
-    },
-    date: "16/10/2024",
-    time: "15:00",
-  },
-  // Adicione mais consultas aqui
-];
+import { collection, query, where, getDocs } from 'firebase/firestore';
+import { auth, db } from '../firebase/FirebaseConfig';
 
 // Componente de Card para cada consulta
 const AppointmentCard = ({ appointment }) => (
   <Card sx={{ display: 'flex', mb: 2, boxShadow: 3 }}>
+    {/* Foto do psicólogo */}
     <CardMedia
       component="img"
       sx={{ width: 150, height: 150, borderRadius: '50%', objectFit: 'cover', m: 2 }}
-      image={appointment.psychologist.imgSrc}
-      alt={appointment.psychologist.name}
+      image={appointment.psychologistPhotoURL || 'images/psicolog.png'} // Fallback se não houver URL
+      alt={appointment.psychologistName || 'Psicólogo'}
     />
     <Box sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', flexGrow: 1, p: 2 }}>
-      <Typography variant="h6"><strong>Psicólogo:</strong> {appointment.psychologist.name}</Typography>
-      <Typography variant="body1"><strong>Fecha:</strong> {appointment.date}</Typography>
+      {/* Nome do psicólogo */}
+      <Typography variant="h6">
+        <strong>Psicólogo:</strong> {appointment.psychologistName || 'N/A'}
+      </Typography>
+      <Typography variant="body1"><strong>Fecha:</strong> {appointment.day}</Typography>
       <Typography variant="body1" sx={{ mb: 2 }}><strong>Hora:</strong> {appointment.time}</Typography>
       <Box sx={{ display: 'flex', gap: 2 }}>
         <Button variant="contained" color="success">
@@ -41,11 +34,60 @@ const AppointmentCard = ({ appointment }) => (
 );
 
 const MisCitas = () => {
-  const [tabValue, setTabValue] = React.useState(0);
+  const [tabValue, setTabValue] = useState(0);
+  const [appointments, setAppointments] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   const handleChange = (event, newValue) => {
     setTabValue(newValue);
   };
+
+  useEffect(() => {
+    const fetchAppointments = async () => {
+        setLoading(true);
+        try {
+            const user = auth.currentUser;
+            if (!user) {
+                console.error('Usuário não autenticado');
+                setLoading(false);
+                return;
+            }
+
+            const userId = user.uid;
+
+            // Consulta para buscar como cliente
+            const clientQuery = query(
+                collection(db, 'appointments'),
+                where('clientId', '==', userId)
+            );
+
+            // Consulta para buscar como psicólogo
+            const psychologistQuery = query(
+                collection(db, 'appointments'),
+                where('psychologistID', '==', userId)
+            );
+
+            const [clientSnapshot, psychologistSnapshot] = await Promise.all([
+                getDocs(clientQuery),
+                getDocs(psychologistQuery),
+            ]);
+
+            // Combinar os resultados das duas consultas
+            const fetchedAppointments = [
+                ...clientSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })),
+                ...psychologistSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })),
+            ];
+
+            setAppointments(fetchedAppointments);
+        } catch (error) {
+            console.error('Erro ao buscar as consultas:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    fetchAppointments();
+  }, []);
 
   return (
     <Box>
@@ -68,13 +110,19 @@ const MisCitas = () => {
         </Tabs>
 
         {/* Lista de Consultas */}
-        <Grid container spacing={2}>
-          {appointments.map((appointment, index) => (
-            <Grid item xs={12} key={index}>
-              <AppointmentCard appointment={appointment} />
-            </Grid>
-          ))}
-        </Grid>
+        {loading ? (
+          <Typography variant="h6" sx={{ textAlign: 'center', mt: 4 }}>
+            Carregando consultas...
+          </Typography>
+        ) : (
+          <Grid container spacing={2}>
+            {appointments.map((appointment) => (
+              <Grid item xs={12} key={appointment.id}>
+                <AppointmentCard appointment={appointment} />
+              </Grid>
+            ))}
+          </Grid>
+        )}
       </Container>
     </Box>
   );

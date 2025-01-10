@@ -4,34 +4,50 @@ import { doc, getDoc } from 'firebase/firestore';
 import { Dialog, DialogTitle, DialogContent, Typography, CircularProgress, FormLabel, Chip, Button, Box } from '@mui/material';
 import { collection, addDoc } from 'firebase/firestore';
 
-function Agenda({ open, psychologistID, onClose }) {
+function Agenda({ open, psychologistID, psychologistName, psychologistPhotoURL, onClose }) {
     const [availability, setAvailability] = useState([]);
     const [loading, setLoading] = useState(true);
     const [name, setName] = useState('');
-    const [selectedTimes, setSelectedTimes] = useState([]); // Estado para horários selecionados
+    const [selectedTimes, setSelectedTimes] = useState([]);
+    const [clientName, setClientName] = useState('');
 
     useEffect(() => {
-        console.log('psychologist ID', psychologistID); // Verifica o ID recebido
         if (open && psychologistID) {
             const fetchData = async () => {
                 setLoading(true);
                 try {
+                    // Busca a disponibilidade e o nome do psicólogo
                     const psychologistDoc = doc(db, 'psychologist', psychologistID);
                     const snapshot = await getDoc(psychologistDoc);
                     if (snapshot.exists()) {
                         setAvailability(snapshot.data().availability || []);
                         const fullName = snapshot.data().name || "Nombre no disponible";
                         setName(fullName.split(" ")[0]); // Extrai o primeiro nome
-                    } else {
-                        console.error("Documento no encontrado!");
                     }
                 } catch (error) {
-                    console.error("Collection no encontrada!");
+                    console.error("Erro ao buscar psicólogo:", error);
                 } finally {
                     setLoading(false);
                 }
             };
+
+            const fetchClientName = async () => {
+                try {
+                    const user = auth.currentUser;
+                    if (user) {
+                        const userDoc = doc(db, 'users', user.uid);
+                        const snapshot = await getDoc(userDoc);
+                        if (snapshot.exists()) {
+                            setClientName(snapshot.data().name || 'Cliente');
+                        }
+                    }
+                } catch (error) {
+                    console.error("Erro ao buscar cliente:", error);
+                }
+            };
+
             fetchData();
+            fetchClientName();
         }
     }, [open, psychologistID]);
 
@@ -48,30 +64,32 @@ function Agenda({ open, psychologistID, onClose }) {
     // Função para lidar com a programação da cita
     const handleScheduleAppointment = async () => {
         try {
-          const user = auth.currentUser; // Usuário autenticado
-          if (!user) {
-            console.error('Usuário não autenticado');
-            return;
-          }
-      
-          const userId = user.uid; // ID do usuário autenticado
-    
-          // Iterar apenas sobre os horários selecionados
-          for (const timeKey of selectedTimes) { // Iterar pelos horários selecionados
-            const [day, time] = timeKey.split('-'); // Separar 'day' e 'time' do timeKey
-    
-            await addDoc(collection(db, 'appointments'), {
-              psychologistID,
-              userId,
-              dia: day, // Nome do dia
-              hora: time, // Hora selecionada
-              timestamp: new Date(), // Opcional: Timestamp para rastrear a criação
-            });
-          }
-      
-          alert('Citas programadas com sucesso!');
+            const user = auth.currentUser;
+            if (!user) {
+                console.error('Usuário não autenticado');
+                return;
+            }
+
+            const clientId = user.uid;
+
+            for (const timeKey of selectedTimes) {
+                const [day, time] = timeKey.split('-');
+
+                await addDoc(collection(db, 'appointments'), {
+                    psychologistID,
+                    psychologistName,
+                    psychologistPhotoURL,
+                    clientId,
+                    clientName,
+                    day,
+                    time,
+                    timestamp: new Date(),
+                });
+            }
+
+            alert('Citas programadas com sucesso!');
         } catch (error) {
-          console.error('Erro ao programar cita:', error);
+            console.error('Erro ao programar cita:', error);
         }
     };
 
