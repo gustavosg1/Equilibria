@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { db } from '../firebase/FirebaseConfig';
+import { db, auth } from '../firebase/FirebaseConfig';
 import { doc, getDoc } from 'firebase/firestore';
 import { Dialog, DialogTitle, DialogContent, Typography, CircularProgress, FormLabel, Chip, Button, Box } from '@mui/material';
+import { collection, addDoc } from 'firebase/firestore';
 
 function Agenda({ open, psychologistID, onClose }) {
     const [availability, setAvailability] = useState([]);
@@ -45,15 +46,33 @@ function Agenda({ open, psychologistID, onClose }) {
     };
 
     // Função para lidar com a programação da cita
-    const handleProgramCita = () => {
-        console.log("Horários selecionados:", selectedTimes);
-        console.log("Psychologist ID:", psychologistID);
-
-        // Aqui você pode enviar os dados para o componente `MisCitas` usando navegação, contexto ou state management
-        // Exemplo fictício de navegação:
-        // navigate('/mis-citas', { state: { psychologistID, selectedTimes } });
-        
-        onClose(); // Fecha o popup após programar
+    const handleScheduleAppointment = async () => {
+        try {
+          const user = auth.currentUser; // Usuário autenticado
+          if (!user) {
+            console.error('Usuário não autenticado');
+            return;
+          }
+      
+          const userId = user.uid; // ID do usuário autenticado
+    
+          // Iterar apenas sobre os horários selecionados
+          for (const timeKey of selectedTimes) { // Iterar pelos horários selecionados
+            const [day, time] = timeKey.split('-'); // Separar 'day' e 'time' do timeKey
+    
+            await addDoc(collection(db, 'appointments'), {
+              psychologistID,
+              userId,
+              dia: day, // Nome do dia
+              hora: time, // Hora selecionada
+              timestamp: new Date(), // Opcional: Timestamp para rastrear a criação
+            });
+          }
+      
+          alert('Citas programadas com sucesso!');
+        } catch (error) {
+          console.error('Erro ao programar cita:', error);
+        }
     };
 
     return (
@@ -101,14 +120,13 @@ function Agenda({ open, psychologistID, onClose }) {
                         </div>
                     ))
                 )}
-                <Box sx={{ display: 'flex', justifyContent: 'center', marginTop: '20px' }}>
+                <Box sx={{ textAlign: 'center', mt: 4 }}>
                     <Button
-                        variant="contained"
-                        color="primary"
-                        onClick={handleProgramCita}
-                        disabled={selectedTimes.length === 0} // Desabilita se nenhum horário estiver selecionado
+                    variant="contained"
+                    color="primary"
+                    onClick={handleScheduleAppointment}
                     >
-                        Programar Cita
+                    Programar cita
                     </Button>
                 </Box>
             </DialogContent>
