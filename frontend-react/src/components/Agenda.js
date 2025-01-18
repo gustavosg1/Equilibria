@@ -10,6 +10,7 @@ function Agenda({ open, psychologistID, psychologistName, psychologistPhotoURL, 
     const [name, setName] = useState('');
     const [selectedTimes, setSelectedTimes] = useState([]);
     const [clientName, setClientName] = useState('');
+    const active = true; 
 
     useEffect(() => {
         if (open && psychologistID) {
@@ -83,6 +84,7 @@ function Agenda({ open, psychologistID, psychologistName, psychologistPhotoURL, 
                     clientName,
                     day,
                     time,
+                    active,
                     timestamp: new Date(),
                 });
             }

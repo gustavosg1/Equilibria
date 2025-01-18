@@ -8,6 +8,7 @@ import EvaluationPage from './pages/EvaluationPage'
 import RotaProtegida from './components/RotaProtegida';
 import ProfilePagePsychologist from './pages/ProfilePagePsychologist';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import Videoconference from './components/Videoconference';
 
 function App() {
     return (

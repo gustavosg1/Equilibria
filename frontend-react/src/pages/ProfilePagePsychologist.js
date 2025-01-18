@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Box, Avatar, Button, Typography, Paper, CircularProgress, Grid2, Grid } from '@mui/material';
+import { Box, Avatar, Button, Paper, Grid2, Grid } from '@mui/material';
 
 import { useAuth } from '../firebase/Authentication';
 import { getFirestore, doc, getDoc } from 'firebase/firestore';

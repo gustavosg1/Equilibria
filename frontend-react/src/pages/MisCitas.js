@@ -1,129 +1,102 @@
 import React, { useEffect, useState } from 'react';
-import { AppBar, Toolbar, Box, Typography, Button, Container, Card, CardMedia, CardContent, Grid, Tabs, Tab } from '@mui/material';
+import { Box, Typography, Button, Container, Card, CardMedia, Grid, Tabs, Tab } from '@mui/material';
 import Menu from '../components/Menu';
-import { collection, query, where, getDocs } from 'firebase/firestore';
+import Videoconference from '../components/Videoconference';
+import { collection, query, where, getDocs, doc, updateDoc } from 'firebase/firestore';
 import { auth, db } from '../firebase/FirebaseConfig';
-
-// Componente de Card para cada consulta
-const AppointmentCard = ({ appointment }) => (
-  <Card sx={{ display: 'flex', mb: 2, boxShadow: 3 }}>
-    {/* Foto do psicólogo */}
-    <CardMedia
-      component="img"
-      sx={{ width: 150, height: 150, borderRadius: '50%', objectFit: 'cover', m: 2 }}
-      image={appointment.psychologistPhotoURL || 'images/psicolog.png'} // Fallback se não houver URL
-      alt={appointment.psychologistName || 'Psicólogo'}
-    />
-    <Box sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', flexGrow: 1, p: 2 }}>
-      {/* Nome do psicólogo */}
-      <Typography variant="h6">
-        <strong>Psicólogo:</strong> {appointment.psychologistName || 'N/A'}
-      </Typography>
-      <Typography variant="body1"><strong>Fecha:</strong> {appointment.day}</Typography>
-      <Typography variant="body1" sx={{ mb: 2 }}><strong>Hora:</strong> {appointment.time}</Typography>
-      <Box sx={{ display: 'flex', gap: 2 }}>
-        <Button variant="contained" color="success">
-          Empezar Videoconferencia
-        </Button>
-        <Button variant="outlined" color="error">
-          Anular
-        </Button>
-      </Box>
-    </Box>
-  </Card>
-);
 
 const MisCitas = () => {
   const [tabValue, setTabValue] = useState(0);
   const [appointments, setAppointments] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [showVideoconference, setShowVideoconference] = useState(false);
+  const [currentPsychologistId, setCurrentPsychologistId] = useState(null);
 
-  const handleChange = (event, newValue) => {
-    setTabValue(newValue);
-  };
+  const AppointmentCard = ({ appointment, onCancel }) => (
+    <Card sx={{ display: 'flex', mb: 2, boxShadow: 3 }}>
+      <CardMedia
+        component="img"
+        sx={{ width: 150, height: 150, borderRadius: '50%', objectFit: 'cover', m: 2 }}
+        image={appointment.psychologistPhotoURL || 'images/psicolog.png'}
+        alt={appointment.psychologistName || 'Psicólogo'}
+      />
+      <Box sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', flexGrow: 1, p: 2 }}>
+        <Typography variant="h6">
+          <strong>Psicólogo:</strong> {appointment.psychologistName || 'N/A'}
+        </Typography>
+        <Typography variant="body1"><strong>Fecha:</strong> {appointment.day}</Typography>
+        <Typography variant="body1" sx={{ mb: 2 }}><strong>Hora:</strong> {appointment.time}</Typography>
+        {appointment.active && (
+          <Box sx={{ display: 'flex', gap: 2 }}>
+            <Button
+              variant="contained"
+              color="success"
+              onClick={() => {
+                setCurrentPsychologistId(appointment.psychologistId); // Pass psychologist ID
+                setShowVideoconference(true); // Show Videoconference
+              }}
+            >
+              Empezar Videoconferencia
+            </Button>
+            <Button variant="outlined" color="error" onClick={() => onCancel(appointment.id)}>
+              Anular
+            </Button>
+          </Box>
+        )}
+      </Box>
+    </Card>
+  );
 
   useEffect(() => {
     const fetchAppointments = async () => {
-        setLoading(true);
-        try {
-            const user = auth.currentUser;
-            if (!user) {
-                console.error('Usuário não autenticado');
-                setLoading(false);
-                return;
-            }
-
-            const userId = user.uid;
-
-            // Consulta para buscar como cliente
-            const clientQuery = query(
-                collection(db, 'appointments'),
-                where('clientId', '==', userId)
-            );
-
-            // Consulta para buscar como psicólogo
-            const psychologistQuery = query(
-                collection(db, 'appointments'),
-                where('psychologistID', '==', userId)
-            );
-
-            const [clientSnapshot, psychologistSnapshot] = await Promise.all([
-                getDocs(clientQuery),
-                getDocs(psychologistQuery),
-            ]);
-
-            // Combinar os resultados das duas consultas
-            const fetchedAppointments = [
-                ...clientSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })),
-                ...psychologistSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })),
-            ];
-
-            setAppointments(fetchedAppointments);
-        } catch (error) {
-            console.error('Erro ao buscar as consultas:', error);
-        } finally {
-            setLoading(false);
-        }
+      setLoading(true);
+      try {
+        const user = auth.currentUser;
+        if (!user) return;
+        const userId = user.uid;
+        const clientQuery = query(collection(db, 'appointments'), where('clientId', '==', userId));
+        const psychologistQuery = query(collection(db, 'appointments'), where('psychologistID', '==', userId));
+        const [clientSnapshot, psychologistSnapshot] = await Promise.all([
+          getDocs(clientQuery),
+          getDocs(psychologistQuery),
+        ]);
+        setAppointments([
+          ...clientSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })),
+          ...psychologistSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })),
+        ]);
+      } catch (error) {
+        console.error(error);
+      } finally {
+        setLoading(false);
+      }
     };
-
     fetchAppointments();
   }, []);
 
   return (
     <Box>
-      {/* Menu */}
       <Menu />
-
-      {/* Container Principal */}
-      <Container sx={{ mt: 4 }}>
-        {/* Tabs para Citas Futuras e Citas Pasadas */}
-        <Tabs
-          value={tabValue}
-          onChange={handleChange}
-          centered
-          textColor="primary"
-          indicatorColor="primary"
-          sx={{ mb: 3 }}
-        >
-          <Tab label="Citas Futuras" />
-          <Tab label="Citas Pasadas" />
-        </Tabs>
-
-        {/* Lista de Consultas */}
-        {loading ? (
-          <Typography variant="h6" sx={{ textAlign: 'center', mt: 4 }}>
-            Carregando consultas...
-          </Typography>
-        ) : (
-          <Grid container spacing={2}>
-            {appointments.map((appointment) => (
-              <Grid item xs={12} key={appointment.id}>
-                <AppointmentCard appointment={appointment} />
-              </Grid>
-            ))}
-          </Grid>
-        )}
-      </Container>
+      {showVideoconference ? (
+        <Videoconference psychologistId={currentPsychologistId} onEnd={() => setShowVideoconference(false)} />
+      ) : (
+        <Container sx={{ mt: 4 }}>
+          <Tabs value={tabValue} onChange={(e, v) => setTabValue(v)} centered textColor="primary" indicatorColor="primary" sx={{ mb: 3 }}>
+            <Tab label="Citas Futuras" />
+            <Tab label="Citas Pasadas" />
+          </Tabs>
+          {loading ? (
+            <Typography variant="h6" sx={{ textAlign: 'center', mt: 4 }}>Carregando consultas...</Typography>
+          ) : (
+            <Grid container spacing={2}>
+              {(tabValue === 0 ? appointments.filter(a => a.active) : appointments.filter(a => !a.active)).map(appointment => (
+                <Grid item xs={12} key={appointment.id}>
+                  <AppointmentCard appointment={appointment} onCancel={id => updateDoc(doc(db, 'appointments', id), { active: false })} />
+                </Grid>
+              ))}
+            </Grid>
+          )}
+        </Container>
+      )}
     </Box>
   );
 };
