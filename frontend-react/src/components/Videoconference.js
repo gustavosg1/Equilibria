@@ -1,216 +1,157 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { getFirestore, collection, getDocs, doc, getDoc } from 'firebase/firestore';
+import { getFirestore, doc, updateDoc, getDoc } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
-import Summary from './Summary'; // Certifique-se de que os caminhos estão corretos
-import Review from './Review'; // Certifique-se de que os caminhos estão corretos
+import Summary from './Summary';
+import Review from './Review';
 
-const Videoconference = ({ psychologistId }) => {
-    const jitsiApiRef = useRef(null); // Referência para a instância do Jitsi
-    const [transcription, setTranscription] = useState(''); // Para exibir a transcrição
-    const [isListening, setIsListening] = useState(false);
-    const [recognition, setRecognition] = useState(null);
-    const [language, setLanguage] = useState('en-US'); // Idioma selecionado
-    const [languages, setLanguages] = useState([]); // Lista de idiomas do Firestore
-    const [isPsychologist, setIsPsychologist] = useState(false); // Verificação do papel do usuário
-    const [showSummary, setShowSummary] = useState(false); // Controla exibição do componente Summary
-    const [showReview, setShowReview] = useState(false); // Controla exibição do componente Review
-    const db = getFirestore();
-    const auth = getAuth();
+const Videoconference = ({ appointmentId }) => {
+  const jitsiApiRef = useRef(null);
+  const [isListening, setIsListening] = useState(false);
+  const [language, setLanguage] = useState('en-US');
+  const [isPsychologist, setIsPsychologist] = useState(false);
+  const [showSummary, setShowSummary] = useState(false);
+  const [showReview, setShowReview] = useState(false);
 
-    // Verifica se o usuário faz parte da coleção `psychologist`
-    useEffect(() => {
-        const checkUserRole = async () => {
-            try {
-                const user = auth.currentUser;
-                if (user) {
-                    const userDoc = await getDoc(doc(db, 'psychologist', user.uid));
-                    if (userDoc.exists()) {
-                        console.log('Usuário é um psicólogo');
-                        setIsPsychologist(true); // Define o estado como verdadeiro se o usuário for um psicólogo
-                    } else {
-                        console.log('Usuário é um cliente');
-                        setIsPsychologist(false);
-                    }
-                } else {
-                    console.error('Nenhum usuário autenticado encontrado');
-                }
-            } catch (error) {
-                console.error('Erro ao verificar papel do usuário:', error);
-            }
-        };
+  const transcriptionRef = useRef('');
+  const [transcription, setTranscription] = useState('');
+  const db = getFirestore();
+  const auth = getAuth();
 
-        checkUserRole();
-    }, [auth, db]);
-
-    // Busca os idiomas da coleção `idiomas` no Firestore
-    useEffect(() => {
-        const fetchLanguages = async () => {
-            try {
-                console.log('Iniciando busca de idiomas no Firestore...');
-                const querySnapshot = await getDocs(collection(db, 'idiomas'));
-                const idiomas = querySnapshot.docs.map((doc) => {
-                    const data = doc.data();
-                    return {
-                        id: doc.id,
-                        code: data.code, // Código do idioma (ex.: 'en-US')
-                        nombre: data.nombre, // Nome do idioma (ex.: 'Inglês')
-                    };
-                });
-
-                setLanguages(idiomas); // Define a lista de idiomas no estado
-            } catch (error) {
-                console.error('Erro ao buscar idiomas do Firestore:', error);
-            }
-        };
-
-        fetchLanguages();
-    }, [db]);
-
-    // Inicializa o Jitsi Meet
-    useEffect(() => {
-        if (!jitsiApiRef.current && window.JitsiMeetExternalAPI) {
-            const domain = '8x8.vc';
-            const options = {
-                roomName: 'vpaas-magic-cookie-267358b35a0449a5b144489a922ec063/SampleAppConsecutiveVisionsMarketInside',
-                parentNode: document.getElementById('jaas-container'),
-            };
-
-            jitsiApiRef.current = new window.JitsiMeetExternalAPI(domain, options);
-
-            // Listener para exibir o componente apropriado ao terminar a videoconferência
-            jitsiApiRef.current.addListener('videoConferenceLeft', () => {
-                console.log('Videoconferência encerrada.');
-                if (isPsychologist) {
-                    setShowSummary(true); // Mostra Summary se for psicólogo
-                } else {
-                    setShowReview(true); // Mostra Review se for cliente
-                }
-            });
-        } else if (!window.JitsiMeetExternalAPI) {
-            console.error('Jitsi Meet API não foi carregada corretamente.');
+  // Verifica o papel do usuário
+  useEffect(() => {
+    const checkUserRole = async () => {
+      try {
+        const user = auth.currentUser;
+        if (user) {
+          const userDoc = await getDoc(doc(db, 'users', user.uid));
+          if (userDoc.exists()) {
+            const userLanguage = userDoc.data().preferredLanguage || 'en-US';
+            setLanguage(userLanguage);
+            setIsPsychologist(false);
+          } else {
+            setIsPsychologist(true);
+          }
         }
+      } catch (error) {
+        console.error('Erro ao verificar papel do usuário:', error);
+      }
+    };
 
-        return () => {
-            if (jitsiApiRef.current) {
-                jitsiApiRef.current.dispose();
-                jitsiApiRef.current = null;
-            }
-        };
-    }, [isPsychologist]);
+    checkUserRole();
+  }, [auth, db]);
 
-    // Configura o reconhecimento de voz
-    const startListening = () => {
-        if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
-            const SpeechRecognition =
-                window.SpeechRecognition || window.webkitSpeechRecognition;
-            const newRecognition = new SpeechRecognition();
-            newRecognition.interimResults = true;
-            newRecognition.continuous = true;
+  // Inicializa o Jitsi Meet
+  useEffect(() => {
+    if (!jitsiApiRef.current && window.JitsiMeetExternalAPI) {
+      const domain = '8x8.vc';
+      const options = {
+        roomName: `room-${appointmentId || Date.now()}`, // Nome dinâmico para a sala
+        parentNode: document.getElementById('jaas-container'),
+        configOverwrite: {
+          startWithAudioMuted: false,
+          startWithVideoMuted: false,
+        },
+        interfaceConfigOverwrite: {
+          TOOLBAR_BUTTONS: ['microphone', 'camera', 'hangup'],
+        },
+      };
 
-            newRecognition.onresult = (event) => {
-                const transcript = Array.from(event.results)
-                    .map((result) => result[0].transcript)
-                    .join('');
-                setTranscription(transcript);
-            };
+      jitsiApiRef.current = new window.JitsiMeetExternalAPI(domain, options);
 
-            newRecognition.onerror = (event) => {
-                console.error('Erro no reconhecimento de fala:', event.error);
-            };
-
-            setRecognition(newRecognition);
-            newRecognition.lang = language;
-            newRecognition.start();
-            setIsListening(true);
+      // Listener para o evento de saída da videoconferência
+      jitsiApiRef.current.addListener('videoConferenceLeft', () => {
+        console.log('Videoconferência encerrada.');
+        saveTranscription();
+        if (isPsychologist) {
+          setShowSummary(true);
         } else {
-            console.error('API de reconhecimento de fala não suportada por este navegador.');
+          setShowReview(true);
         }
-    };
+      });
+    } else if (!window.JitsiMeetExternalAPI) {
+      console.error('Jitsi Meet API não foi carregada corretamente.');
+    }
 
-    const stopListening = () => {
-        if (recognition) {
-            recognition.stop();
-            setIsListening(false);
+    return () => {
+      if (jitsiApiRef.current) {
+        jitsiApiRef.current.dispose();
+        jitsiApiRef.current = null;
+      }
+    };
+  }, [appointmentId, isPsychologist]);
+
+  // Configura o reconhecimento de fala
+  useEffect(() => {
+    if (!isPsychologist && ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
+      const SpeechRecognition =
+        window.SpeechRecognition || window.webkitSpeechRecognition;
+
+      const recognition = new SpeechRecognition();
+      recognition.lang = language;
+      recognition.continuous = true;
+      recognition.interimResults = true;
+
+      recognition.onresult = (event) => {
+        let transcript = '';
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          const result = event.results[i];
+          if (result.isFinal) {
+            transcript += result[0].transcript;
+          }
         }
-    };
 
-    const handleLanguageChange = (event) => {
-        setLanguage(event.target.value);
-    };
+        transcriptionRef.current += ` ${transcript}`.trim();
+        setTranscription(transcriptionRef.current);
 
-    return (
-        <div style={{ height: '100vh', width: '100%' }}>
-            {/* O contêiner onde o Jitsi será renderizado */}
-            {!showSummary && !showReview && (
-                <div id="jaas-container" style={{ height: '70%', width: '100%' }}></div>
-            )}
+        console.log('Texto reconhecido no evento:', transcript);
+        console.log('Texto total atualizado:', transcriptionRef.current);
+      };
 
-            {/* Renderiza o componente apropriado após a videoconferência */}
-            {showSummary && <Summary psychologistId={psychologistId} />}
-            {showReview && <Review psychologistId={psychologistId} />}
+      recognition.onerror = (event) => {
+        console.error('Erro no reconhecimento de fala:', event.error);
+      };
 
-            {/* Mostra reconhecimento de voz apenas para psicólogos */}
-            {isPsychologist && !showSummary && !showReview && (
-                <div style={{ padding: '1rem', backgroundColor: '#f4f4f4' }}>
-                    <h3>Reconhecimento de Voz</h3>
+      recognition.start();
+      setIsListening(true);
 
-                    {/* Dropdown para selecionar idioma */}
-                    <label htmlFor="language-select">Selecione o idioma: </label>
-                    <select
-                        id="language-select"
-                        value={language}
-                        onChange={handleLanguageChange}
-                        style={{
-                            marginLeft: '10px',
-                            padding: '5px',
-                            fontSize: '16px',
-                            width: '400px',
-                        }}
-                    >
-                        {languages.map((lang) => (
-                            <option key={lang.id} value={lang.code}>
-                                {lang.nombre}
-                            </option>
-                        ))}
-                    </select>
+      return () => {
+        recognition.stop();
+        setIsListening(false);
+      };
+    }
+  }, [isPsychologist, language]);
 
-                    <div style={{ marginTop: '10px' }}>
-                        <button
-                            onClick={startListening}
-                            disabled={isListening}
-                            style={{
-                                marginRight: '10px',
-                                padding: '10px',
-                                backgroundColor: '#4caf50',
-                                color: 'white',
-                                border: 'none',
-                                cursor: 'pointer',
-                            }}
-                        >
-                            Iniciar Transcrição
-                        </button>
-                        <button
-                            onClick={stopListening}
-                            disabled={!isListening}
-                            style={{
-                                padding: '10px',
-                                backgroundColor: '#f44336',
-                                color: 'white',
-                                border: 'none',
-                                cursor: 'pointer',
-                            }}
-                        >
-                            Parar Transcrição
-                        </button>
-                    </div>
+  // Salva a transcrição na coleção `appointments`
+  const saveTranscription = async () => {
+    try {
+      if (!appointmentId) {
+        console.error('ID do appointment não foi fornecido.');
+        return;
+      }
+      const appointmentRef = doc(db, 'appointments', appointmentId);
+      await updateDoc(appointmentRef, { transcription: transcriptionRef.current });
+      console.log('Transcrição salva com sucesso:', transcriptionRef.current);
+    } catch (error) {
+      console.error('Erro ao salvar a transcrição:', error);
+    }
+  };
 
-                    <div style={{ marginTop: '1rem', fontSize: '16px', fontStyle: 'italic' }}>
-                        {transcription || 'Diga algo para começar a transcrição...'}
-                    </div>
-                </div>
-            )}
-        </div>
-    );
+  return (
+    <div style={{ height: '100vh', width: '100%' }}>
+      {!showSummary && !showReview && (
+        <>
+          <div id="jaas-container" style={{ height: '70%', width: '100%' }}></div>
+          <div style={{ padding: '1rem', backgroundColor: '#f4f4f4', height: '30%', overflowY: 'auto' }}>
+            <h3>Transcrição:</h3>
+            <p>{transcription || 'Aguardando fala...'}</p>
+          </div>
+        </>
+      )}
+
+      {showSummary && <Summary appointmentId={appointmentId} />}
+      {showReview && <Review appointmentId={appointmentId} />}
+    </div>
+  );
 };
 
 export default Videoconference;

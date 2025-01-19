@@ -12,6 +12,7 @@ const MisCitas = () => {
   const [showVideoconference, setShowVideoconference] = useState(false);
   const [currentChannel, setCurrentChannel] = useState(null); // Armazena o canal dinamicamente
   const [selectedPsychologistID, setSelectedPsychologistID] = useState(null); // Armazena o psychologistID do card clicado
+  const [selectedAppointmentID, setSelectedAppointmentID] = useState(null); // Armazena o ID do appointment clicado
 
   const AppointmentCard = ({ appointment, onCancel }) => {
     return (
@@ -36,6 +37,7 @@ const MisCitas = () => {
                 onClick={() => {
                   if (appointment.psychologistID) {
                     setSelectedPsychologistID(appointment.psychologistID); // Define o psychologistID do card clicado
+                    setSelectedAppointmentID(appointment.id); // Define o ID do appointment clicado
                     setCurrentChannel(`consulta-${appointment.psychologistID}-${Date.now()}`); // Define o canal dinamicamente
                     setShowVideoconference(true); // Exibe o componente Videoconference
                   } else {
@@ -92,6 +94,7 @@ const MisCitas = () => {
         <Videoconference
           channelName={currentChannel} // Passa o canal dinâmico para Videoconference
           psychologistId={selectedPsychologistID} // Passa o psychologistID para Videoconference
+          appointmentId={selectedAppointmentID} // Passa o appointmentID para Videoconference
           onEnd={() => setShowVideoconference(false)} // Fecha o componente após terminar
         />
       ) : (

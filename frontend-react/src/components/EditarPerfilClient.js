@@ -1,6 +1,15 @@
-import React, { useState } from 'react';
-import { Box, TextField, Button, Typography, Modal, Avatar, Grid } from '@mui/material';
-import { getFirestore, doc, setDoc } from 'firebase/firestore';
+import React, { useState, useEffect } from 'react';
+import {
+  Box,
+  TextField,
+  Button,
+  Typography,
+  Modal,
+  Avatar,
+  Grid,
+  Autocomplete,
+} from '@mui/material';
+import { getFirestore, collection, getDocs, doc, setDoc } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
@@ -8,12 +17,32 @@ function EditarPerfil({ onPhotoUpdate }) {
   const [name, setNome] = useState('');
   const [birthDate, setDataNascimento] = useState('');
   const [photo, setFoto] = useState(null);
+  const [selectedLanguage, setSelectedLanguage] = useState(null);
+  const [languages, setLanguages] = useState([]);
   const [showModal, setShowModal] = useState(false);
 
   const db = getFirestore();
   const auth = getAuth();
   const storage = getStorage();
   const userData = {};
+
+  useEffect(() => {
+    const fetchLanguages = async () => {
+      try {
+        const querySnapshot = await getDocs(collection(db, 'idiomas'));
+        const idiomas = querySnapshot.docs.map((doc) => ({
+          id: doc.id,
+          code: doc.data().code,
+          nombre: doc.data().nombre,
+        }));
+        setLanguages(idiomas);
+      } catch (error) {
+        console.error('Erro ao buscar idiomas:', error);
+      }
+    };
+
+    fetchLanguages();
+  }, [db]);
 
   const handleFotoChange = (e) => {
     setFoto(e.target.files[0]);
@@ -36,6 +65,7 @@ function EditarPerfil({ onPhotoUpdate }) {
         if (name) userData.name = name;
         if (birthDate) userData.birthDate = birthDate;
         if (photo) userData.photoURL = downloadURL || null;
+        if (selectedLanguage) userData.preferredLanguage = selectedLanguage.code;
 
         await setDoc(
           doc(db, 'users', uid),
@@ -57,16 +87,21 @@ function EditarPerfil({ onPhotoUpdate }) {
   };
 
   return (
-    <Grid container justifyContent="center" alignItems="center" style={{ minHeight: '100vh' }}>
-      <Grid item xs={12} md={6} lg={4}>
+    <Grid
+      container
+      justifyContent="center"
+      alignItems="flex-start" // Alinha o formulário no topo
+      sx={{ minHeight: '100vh', backgroundColor: '#f5f5f5', paddingTop: 5 }} // Adiciona padding superior
+    >
+      <Grid item xs={12} md={6} lg={5}>
         <Box
           component="form"
           onSubmit={handleSubmit}
           sx={{
             p: 4,
             border: '1px solid #ccc',
-            borderRadius: 2,
-            boxShadow: 2,
+            borderRadius: 3,
+            boxShadow: 3,
             backgroundColor: 'white',
           }}
         >
@@ -91,6 +126,20 @@ function EditarPerfil({ onPhotoUpdate }) {
             value={birthDate}
             onChange={(e) => setDataNascimento(e.target.value)}
           />
+          <Autocomplete
+            options={languages}
+            getOptionLabel={(option) => option.nombre || ''}
+            onChange={(e, value) => setSelectedLanguage(value)}
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                label="Idioma Preferido"
+                variant="outlined"
+                margin="normal"
+              />
+            )}
+            sx={{ mt: 2, mb: 3 }}
+          />
           <Box mt={2} mb={3} textAlign="center">
             <Button variant="contained" component="label">
               Escolher Foto
@@ -107,7 +156,7 @@ function EditarPerfil({ onPhotoUpdate }) {
             )}
           </Box>
           <Box textAlign="center">
-            <Button type="submit" variant="contained" color="primary">
+            <Button type="submit" variant="contained" color="primary" sx={{ px: 5 }}>
               Salvar
             </Button>
           </Box>
@@ -131,13 +180,14 @@ function EditarPerfil({ onPhotoUpdate }) {
             boxShadow: 24,
             p: 4,
             textAlign: 'center',
+            borderRadius: 2,
           }}
         >
           <Typography id="modal-sucesso-titulo" variant="h6" component="h2">
             Éxito
           </Typography>
           <Typography id="modal-sucesso-descricao" sx={{ mt: 2 }}>
-            Dados guardados com êxito
+            Dados guardados com êxito!
           </Typography>
           <Box mt={3} textAlign="center">
             <Button
