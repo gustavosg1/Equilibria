@@ -10,42 +10,50 @@ const MisCitas = () => {
   const [appointments, setAppointments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showVideoconference, setShowVideoconference] = useState(false);
-  const [currentPsychologistId, setCurrentPsychologistId] = useState(null);
+  const [currentChannel, setCurrentChannel] = useState(null); // Armazena o canal dinamicamente
+  const [selectedPsychologistID, setSelectedPsychologistID] = useState(null); // Armazena o psychologistID do card clicado
 
-  const AppointmentCard = ({ appointment, onCancel }) => (
-    <Card sx={{ display: 'flex', mb: 2, boxShadow: 3 }}>
-      <CardMedia
-        component="img"
-        sx={{ width: 150, height: 150, borderRadius: '50%', objectFit: 'cover', m: 2 }}
-        image={appointment.psychologistPhotoURL || 'images/psicolog.png'}
-        alt={appointment.psychologistName || 'Psicólogo'}
-      />
-      <Box sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', flexGrow: 1, p: 2 }}>
-        <Typography variant="h6">
-          <strong>Psicólogo:</strong> {appointment.psychologistName || 'N/A'}
-        </Typography>
-        <Typography variant="body1"><strong>Fecha:</strong> {appointment.day}</Typography>
-        <Typography variant="body1" sx={{ mb: 2 }}><strong>Hora:</strong> {appointment.time}</Typography>
-        {appointment.active && (
-          <Box sx={{ display: 'flex', gap: 2 }}>
-            <Button
-              variant="contained"
-              color="success"
-              onClick={() => {
-                setCurrentPsychologistId(appointment.psychologistId); // Pass psychologist ID
-                setShowVideoconference(true); // Show Videoconference
-              }}
-            >
-              Empezar Videoconferencia
-            </Button>
-            <Button variant="outlined" color="error" onClick={() => onCancel(appointment.id)}>
-              Anular
-            </Button>
-          </Box>
-        )}
-      </Box>
-    </Card>
-  );
+  const AppointmentCard = ({ appointment, onCancel }) => {
+    return (
+      <Card sx={{ display: 'flex', mb: 2, boxShadow: 3 }}>
+        <CardMedia
+          component="img"
+          sx={{ width: 150, height: 150, borderRadius: '50%', objectFit: 'cover', m: 2 }}
+          image={appointment.psychologistPhotoURL || 'images/psicolog.png'}
+          alt={appointment.psychologistName || 'Psicólogo'}
+        />
+        <Box sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', flexGrow: 1, p: 2 }}>
+          <Typography variant="h6">
+            <strong>Psicólogo:</strong> {appointment.psychologistName || 'N/A'}
+          </Typography>
+          <Typography variant="body1"><strong>Fecha:</strong> {appointment.day}</Typography>
+          <Typography variant="body1" sx={{ mb: 2 }}><strong>Hora:</strong> {appointment.time}</Typography>
+          {appointment.active && (
+            <Box sx={{ display: 'flex', gap: 2 }}>
+              <Button
+                variant="contained"
+                color="success"
+                onClick={() => {
+                  if (appointment.psychologistID) {
+                    setSelectedPsychologistID(appointment.psychologistID); // Define o psychologistID do card clicado
+                    setCurrentChannel(`consulta-${appointment.psychologistID}-${Date.now()}`); // Define o canal dinamicamente
+                    setShowVideoconference(true); // Exibe o componente Videoconference
+                  } else {
+                    console.error('O ID do psicólogo está ausente no agendamento.');
+                  }
+                }}
+              >
+                Empezar Videoconferencia
+              </Button>
+              <Button variant="outlined" color="error" onClick={() => onCancel(appointment.id)}>
+                Anular
+              </Button>
+            </Box>
+          )}
+        </Box>
+      </Card>
+    );
+  };
 
   useEffect(() => {
     const fetchAppointments = async () => {
@@ -60,16 +68,20 @@ const MisCitas = () => {
           getDocs(clientQuery),
           getDocs(psychologistQuery),
         ]);
-        setAppointments([
+
+        const fetchedAppointments = [
           ...clientSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })),
           ...psychologistSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })),
-        ]);
+        ];
+
+        setAppointments(fetchedAppointments);
       } catch (error) {
         console.error(error);
       } finally {
         setLoading(false);
       }
     };
+
     fetchAppointments();
   }, []);
 
@@ -77,7 +89,11 @@ const MisCitas = () => {
     <Box>
       <Menu />
       {showVideoconference ? (
-        <Videoconference psychologistId={currentPsychologistId} onEnd={() => setShowVideoconference(false)} />
+        <Videoconference
+          channelName={currentChannel} // Passa o canal dinâmico para Videoconference
+          psychologistId={selectedPsychologistID} // Passa o psychologistID para Videoconference
+          onEnd={() => setShowVideoconference(false)} // Fecha o componente após terminar
+        />
       ) : (
         <Container sx={{ mt: 4 }}>
           <Tabs value={tabValue} onChange={(e, v) => setTabValue(v)} centered textColor="primary" indicatorColor="primary" sx={{ mb: 3 }}>
