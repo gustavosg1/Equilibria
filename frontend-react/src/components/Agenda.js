@@ -4,7 +4,7 @@ import { doc, getDoc } from 'firebase/firestore';
 import { Dialog, DialogTitle, DialogContent, Typography, CircularProgress, FormLabel, Chip, Button, Box } from '@mui/material';
 import { collection, addDoc } from 'firebase/firestore';
 
-function Agenda({ open, psychologistID, psychologistName, psychologistPhotoURL, onClose }) {
+function Agenda({ open, psychologistId, psychologistName, psychologistPhotoURL, onClose }) {
     const [availability, setAvailability] = useState([]);
     const [loading, setLoading] = useState(true);
     const [name, setName] = useState('');
@@ -13,12 +13,12 @@ function Agenda({ open, psychologistID, psychologistName, psychologistPhotoURL, 
     const active = true; 
 
     useEffect(() => {
-        if (open && psychologistID) {
+        if (open && psychologistId) {
             const fetchData = async () => {
                 setLoading(true);
                 try {
                     // Busca a disponibilidade e o nome do psicólogo
-                    const psychologistDoc = doc(db, 'psychologist', psychologistID);
+                    const psychologistDoc = doc(db, 'psychologist', psychologistId);
                     const snapshot = await getDoc(psychologistDoc);
                     if (snapshot.exists()) {
                         setAvailability(snapshot.data().availability || []);
@@ -50,7 +50,7 @@ function Agenda({ open, psychologistID, psychologistName, psychologistPhotoURL, 
             fetchData();
             fetchClientName();
         }
-    }, [open, psychologistID]);
+    }, [open, psychologistId]);
 
     // Função para alternar seleção de horários
     const toggleTimeSelection = (day, time) => {
@@ -77,7 +77,7 @@ function Agenda({ open, psychologistID, psychologistName, psychologistPhotoURL, 
                 const [day, time] = timeKey.split('-');
 
                 await addDoc(collection(db, 'appointments'), {
-                    psychologistID,
+                    psychologistId,
                     psychologistName,
                     psychologistPhotoURL,
                     clientId,

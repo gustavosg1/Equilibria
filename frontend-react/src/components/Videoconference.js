@@ -3,17 +3,17 @@ import { getFirestore, doc, updateDoc, getDoc } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 import Summary from './Summary';
 import Review from './Review';
+import { FaPhoneSlash } from 'react-icons/fa';
+
 
 const Videoconference = ({ appointmentId }) => {
   const jitsiApiRef = useRef(null);
-  const [isListening, setIsListening] = useState(false);
   const [language, setLanguage] = useState('en-US');
   const [isPsychologist, setIsPsychologist] = useState(false);
   const [showSummary, setShowSummary] = useState(false);
   const [showReview, setShowReview] = useState(false);
 
   const transcriptionRef = useRef('');
-  const [transcription, setTranscription] = useState('');
   const db = getFirestore();
   const auth = getAuth();
 
@@ -27,9 +27,7 @@ const Videoconference = ({ appointmentId }) => {
           if (userDoc.exists()) {
             const userLanguage = userDoc.data().preferredLanguage || 'en-US';
             setLanguage(userLanguage);
-            setIsPsychologist(false);
-          } else {
-            setIsPsychologist(true);
+            setIsPsychologist(userDoc.data().role === 'psychologist');
           }
         }
       } catch (error) {
@@ -43,9 +41,9 @@ const Videoconference = ({ appointmentId }) => {
   // Inicializa o Jitsi Meet
   useEffect(() => {
     if (!jitsiApiRef.current && window.JitsiMeetExternalAPI) {
-      const domain = '8x8.vc';
+      const domain = 'meet.jit.si';
       const options = {
-        roomName: `room-${appointmentId || Date.now()}`, // Nome dinâmico para a sala
+        roomName: `room-${appointmentId || Date.now()}`,
         parentNode: document.getElementById('jaas-container'),
         configOverwrite: {
           startWithAudioMuted: false,
@@ -57,17 +55,6 @@ const Videoconference = ({ appointmentId }) => {
       };
 
       jitsiApiRef.current = new window.JitsiMeetExternalAPI(domain, options);
-
-      // Listener para o evento de saída da videoconferência
-      jitsiApiRef.current.addListener('videoConferenceLeft', () => {
-        console.log('Videoconferência encerrada.');
-        saveTranscription();
-        if (isPsychologist) {
-          setShowSummary(true);
-        } else {
-          setShowReview(true);
-        }
-      });
     } else if (!window.JitsiMeetExternalAPI) {
       console.error('Jitsi Meet API não foi carregada corretamente.');
     }
@@ -78,7 +65,7 @@ const Videoconference = ({ appointmentId }) => {
         jitsiApiRef.current = null;
       }
     };
-  }, [appointmentId, isPsychologist]);
+  }, [appointmentId]);
 
   // Configura o reconhecimento de fala
   useEffect(() => {
@@ -101,10 +88,6 @@ const Videoconference = ({ appointmentId }) => {
         }
 
         transcriptionRef.current += ` ${transcript}`.trim();
-        setTranscription(transcriptionRef.current);
-
-        console.log('Texto reconhecido no evento:', transcript);
-        console.log('Texto total atualizado:', transcriptionRef.current);
       };
 
       recognition.onerror = (event) => {
@@ -112,16 +95,14 @@ const Videoconference = ({ appointmentId }) => {
       };
 
       recognition.start();
-      setIsListening(true);
 
       return () => {
         recognition.stop();
-        setIsListening(false);
       };
     }
   }, [isPsychologist, language]);
 
-  // Salva a transcrição na coleção `appointments`
+  // Salva a transcrição no Firestore
   const saveTranscription = async () => {
     try {
       if (!appointmentId) {
@@ -136,15 +117,49 @@ const Videoconference = ({ appointmentId }) => {
     }
   };
 
+  // Finaliza a videoconferência
+  const handleEndCall = async () => {
+    if (!isPsychologist) {
+      await saveTranscription();
+      setShowReview(true);
+    } else {
+      setShowSummary(true);
+    }
+  };
+
   return (
     <div style={{ height: '100vh', width: '100%' }}>
       {!showSummary && !showReview && (
         <>
-          <div id="jaas-container" style={{ height: '70%', width: '100%' }}></div>
-          <div style={{ padding: '1rem', backgroundColor: '#f4f4f4', height: '30%', overflowY: 'auto' }}>
-            <h3>Transcrição:</h3>
-            <p>{transcription || 'Aguardando fala...'}</p>
-          </div>
+          <div id="jaas-container" style={{ height: '90%', width: '100%' }}></div>
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'center', // Centraliza horizontalmente
+                alignItems: 'center', // Centraliza verticalmente
+                height: '10%', // Define a altura do contêiner para centralizar
+              }}
+            >
+              <button
+                onClick={handleEndCall}
+                style={{
+                  padding: '1rem 2rem',
+                  fontSize: '1rem',
+                  backgroundColor: '#ff0000', // Cor de fundo vermelha
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: '5px',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.5rem', // Espaçamento entre o ícone e o texto
+                }}
+              >
+                <FaPhoneSlash /> {/* Ícone de telefone */}
+                TERMINAR VIDEOLLAMADA
+              </button>
+            </div>
         </>
       )}
 

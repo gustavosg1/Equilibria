@@ -11,7 +11,7 @@ const MisCitas = () => {
   const [loading, setLoading] = useState(true);
   const [showVideoconference, setShowVideoconference] = useState(false);
   const [currentChannel, setCurrentChannel] = useState(null); // Armazena o canal dinamicamente
-  const [selectedPsychologistID, setSelectedPsychologistID] = useState(null); // Armazena o psychologistID do card clicado
+  const [selectedPsychologistId, setSelectedPsychologistId] = useState(null); // Armazena o psychologistID do card clicado
   const [selectedAppointmentID, setSelectedAppointmentID] = useState(null); // Armazena o ID do appointment clicado
 
   const AppointmentCard = ({ appointment, onCancel }) => {
@@ -35,13 +35,14 @@ const MisCitas = () => {
                 variant="contained"
                 color="success"
                 onClick={() => {
-                  if (appointment.psychologistID) {
-                    setSelectedPsychologistID(appointment.psychologistID); // Define o psychologistID do card clicado
+                  if (appointment.psychologistId) {
+                    setSelectedPsychologistId(appointment.psychologistId); // Define o psychologistID do card clicado
                     setSelectedAppointmentID(appointment.id); // Define o ID do appointment clicado
-                    setCurrentChannel(`consulta-${appointment.psychologistID}-${Date.now()}`); // Define o canal dinamicamente
+                    setCurrentChannel(`consulta-${appointment.psychologistId}-${Date.now()}`); // Define o canal dinamicamente
                     setShowVideoconference(true); // Exibe o componente Videoconference
                   } else {
                     console.error('O ID do psicólogo está ausente no agendamento.');
+                    
                   }
                 }}
               >
@@ -65,7 +66,7 @@ const MisCitas = () => {
         if (!user) return;
         const userId = user.uid;
         const clientQuery = query(collection(db, 'appointments'), where('clientId', '==', userId));
-        const psychologistQuery = query(collection(db, 'appointments'), where('psychologistID', '==', userId));
+        const psychologistQuery = query(collection(db, 'appointments'), where('psychologistId', '==', userId));
         const [clientSnapshot, psychologistSnapshot] = await Promise.all([
           getDocs(clientQuery),
           getDocs(psychologistQuery),
@@ -93,7 +94,7 @@ const MisCitas = () => {
       {showVideoconference ? (
         <Videoconference
           channelName={currentChannel} // Passa o canal dinâmico para Videoconference
-          psychologistId={selectedPsychologistID} // Passa o psychologistID para Videoconference
+          psychologistId={selectedPsychologistId} // Passa o psychologistID para Videoconference
           appointmentId={selectedAppointmentID} // Passa o appointmentID para Videoconference
           onEnd={() => setShowVideoconference(false)} // Fecha o componente após terminar
         />

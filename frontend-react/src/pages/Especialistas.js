@@ -213,7 +213,7 @@ function Especialistas() {
       </Container>
       {psychologistId && open && (
       <Agenda
-        psychologistID={psychologistId}
+        psychologistId={psychologistId}
         psychologistName={psychologists.find(p => p.id === psychologistId)?.name || ''}
         psychologistPhotoURL={psychologists.find(p => p.id === psychologistId)?.photoURL || ''}
         open={open}

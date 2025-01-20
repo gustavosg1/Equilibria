@@ -21,12 +21,13 @@ const Review = ({ psychologistId }) => {
     try {
       const user = auth.currentUser;
       if (!user) throw new Error('Usuario no autenticado');
-
+      if (!psychologistId) throw new Error('psychologistId no proporcionado');
+  
       const clientId = user.uid;
-
+  
       // Documento do psicólogo dentro da coleção "reviews"
       const psychologistDocRef = doc(db, 'reviews', psychologistId);
-
+  
       // Verifica se o documento do psicólogo já existe
       const psychologistDoc = await getDoc(psychologistDocRef);
       if (!psychologistDoc.exists()) {
@@ -36,7 +37,7 @@ const Review = ({ psychologistId }) => {
           reviews: [], // Inicializa o campo de avaliações como uma lista vazia
         });
       }
-
+  
       // Adiciona a nova avaliação no campo "reviews" usando arrayUnion
       await updateDoc(psychologistDocRef, {
         reviews: arrayUnion({
@@ -46,7 +47,7 @@ const Review = ({ psychologistId }) => {
           comment,
         }),
       });
-
+  
       // Exibe o modal de sucesso
       setShowModal(true);
     } catch (error) {
