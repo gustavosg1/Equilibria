@@ -6,7 +6,7 @@ import Review from './Review';
 import { FaPhoneSlash } from 'react-icons/fa';
 
 
-const Videoconference = ({ appointmentId }) => {
+const Videoconference = ({ appointmentId, psychologistId }) => {
   const jitsiApiRef = useRef(null);
   const [language, setLanguage] = useState('en-US');
   const [isPsychologist, setIsPsychologist] = useState(false);
@@ -164,7 +164,7 @@ const Videoconference = ({ appointmentId }) => {
       )}
 
       {showSummary && <Summary appointmentId={appointmentId} />}
-      {showReview && <Review appointmentId={appointmentId} />}
+      {showReview && <Review psychologistId={psychologistId} />}
     </div>
   );
 };

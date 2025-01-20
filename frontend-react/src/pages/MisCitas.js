@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Box, Typography, Button, Container, Card, CardMedia, Grid, Tabs, Tab } from '@mui/material';
 import Menu from '../components/Menu';
 import Videoconference from '../components/Videoconference';
-import { collection, query, where, getDocs, doc, updateDoc } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, updateDoc, getDoc } from 'firebase/firestore';
 import { auth, db } from '../firebase/FirebaseConfig';
 
 const MisCitas = () => {
@@ -10,22 +10,71 @@ const MisCitas = () => {
   const [appointments, setAppointments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showVideoconference, setShowVideoconference] = useState(false);
-  const [currentChannel, setCurrentChannel] = useState(null); // Armazena o canal dinamicamente
-  const [selectedPsychologistId, setSelectedPsychologistId] = useState(null); // Armazena o psychologistID do card clicado
-  const [selectedAppointmentID, setSelectedAppointmentID] = useState(null); // Armazena o ID do appointment clicado
+  const [currentChannel, setCurrentChannel] = useState(null);
+  const [selectedPsychologistId, setSelectedPsychologistId] = useState(null);
+  const [selectedAppointmentID, setSelectedAppointmentID] = useState(null);
+  const [isPsychologist, setIsPsychologist] = useState(false); // Determina o tipo de usuário logado
+
+  // Verifica em qual coleção o usuário está
+  useEffect(() => {
+    const checkUserCollection = async () => {
+      const user = auth.currentUser;
+      if (user) {
+        const userId = user.uid;
+
+        // Verifica na coleção 'psychologists'
+        const psychologistDoc = await getDoc(doc(db, 'psychologist', userId));
+        if (psychologistDoc.exists()) {
+          setIsPsychologist(true); // Define que o usuário é um psicólogo
+ 
+          return;
+        }
+
+        // Verifica na coleção 'users'
+        const userDoc = await getDoc(doc(db, 'users', userId));
+        if (userDoc.exists()) {
+          setIsPsychologist(false); // Define que o usuário é um cliente
+ 
+          return;
+        }
+
+        console.error('Usuário não encontrado em nenhuma coleção.');
+      }
+    };
+
+    checkUserCollection();
+  }, []);
 
   const AppointmentCard = ({ appointment, onCancel }) => {
+    const [otherUserInfo, setOtherUserInfo] = useState(null); // Armazena informações do outro usuário
+
+    // Busca informações do outro usuário (cliente ou psicólogo)
+    useEffect(() => {
+      const fetchOtherUserInfo = async () => {
+        const otherUserId = isPsychologist ? appointment.clientId : appointment.psychologistId;
+        if (otherUserId) {
+          const collectionName = isPsychologist ? 'users' : 'psychologists';
+          const otherUserDoc = await getDoc(doc(db, collectionName, otherUserId));
+          if (otherUserDoc.exists()) {
+            setOtherUserInfo(otherUserDoc.data());
+          }
+        }
+      };
+
+      fetchOtherUserInfo();
+    }, [appointment, isPsychologist]);
+
     return (
       <Card sx={{ display: 'flex', mb: 2, boxShadow: 3 }}>
         <CardMedia
           component="img"
           sx={{ width: 150, height: 150, borderRadius: '50%', objectFit: 'cover', m: 2 }}
-          image={appointment.psychologistPhotoURL || 'images/psicolog.png'}
-          alt={appointment.psychologistName || 'Psicólogo'}
+          image={otherUserInfo?.photoURL || 'images/default.png'} // Exibe a foto do outro usuário
+          alt={otherUserInfo?.name || 'Usuário'}
         />
         <Box sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', flexGrow: 1, p: 2 }}>
           <Typography variant="h6">
-            <strong>Psicólogo:</strong> {appointment.psychologistName || 'N/A'}
+            <strong>{isPsychologist ? 'Cliente:' : 'Psicólogo:'}</strong> {otherUserInfo?.name || 'N/A'} {/* Exibe o nome do outro usuário */}
           </Typography>
           <Typography variant="body1"><strong>Fecha:</strong> {appointment.day}</Typography>
           <Typography variant="body1" sx={{ mb: 2 }}><strong>Hora:</strong> {appointment.time}</Typography>
@@ -36,13 +85,12 @@ const MisCitas = () => {
                 color="success"
                 onClick={() => {
                   if (appointment.psychologistId) {
-                    setSelectedPsychologistId(appointment.psychologistId); // Define o psychologistID do card clicado
-                    setSelectedAppointmentID(appointment.id); // Define o ID do appointment clicado
-                    setCurrentChannel(`consulta-${appointment.psychologistId}-${Date.now()}`); // Define o canal dinamicamente
-                    setShowVideoconference(true); // Exibe o componente Videoconference
+                    setSelectedPsychologistId(appointment.psychologistId);
+                    setSelectedAppointmentID(appointment.id);
+                    setCurrentChannel(`consulta-${appointment.psychologistId}-${Date.now()}`);
+                    setShowVideoconference(true);
                   } else {
                     console.error('O ID do psicólogo está ausente no agendamento.');
-                    
                   }
                 }}
               >
@@ -93,10 +141,10 @@ const MisCitas = () => {
       <Menu />
       {showVideoconference ? (
         <Videoconference
-          channelName={currentChannel} // Passa o canal dinâmico para Videoconference
-          psychologistId={selectedPsychologistId} // Passa o psychologistID para Videoconference
-          appointmentId={selectedAppointmentID} // Passa o appointmentID para Videoconference
-          onEnd={() => setShowVideoconference(false)} // Fecha o componente após terminar
+          channelName={currentChannel}
+          psychologistId={selectedPsychologistId}
+          appointmentId={selectedAppointmentID}
+          onEnd={() => setShowVideoconference(false)}
         />
       ) : (
         <Container sx={{ mt: 4 }}>
