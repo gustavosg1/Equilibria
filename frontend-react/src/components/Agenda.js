@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { db, auth } from '../firebase/FirebaseConfig';
 import { doc, getDoc } from 'firebase/firestore';
-import { Dialog, DialogTitle, DialogContent, Typography, CircularProgress, FormLabel, Chip, Button, Box } from '@mui/material';
+import { Dialog, DialogTitle, DialogContent, Typography, CircularProgress, FormLabel, Chip, Button, Box, Modal } from '@mui/material';
 import { collection, addDoc } from 'firebase/firestore';
 
 function Agenda({ open, psychologistId, psychologistName, psychologistPhotoURL, onClose }) {
@@ -11,6 +11,8 @@ function Agenda({ open, psychologistId, psychologistName, psychologistPhotoURL, 
     const [selectedTimes, setSelectedTimes] = useState([]);
     const [clientName, setClientName] = useState('');
     const active = true; 
+    const [showModal, setShowModal] = useState(false); // Controla a exibição do modal
+    const [modalMessage, setModalMessage] = useState(''); // Mensagem a ser exibida no modal
 
     useEffect(() => {
         if (open && psychologistId) {
@@ -70,12 +72,12 @@ function Agenda({ open, psychologistId, psychologistName, psychologistPhotoURL, 
                 console.error('Usuário não autenticado');
                 return;
             }
-
+    
             const clientId = user.uid;
-
+    
             for (const timeKey of selectedTimes) {
                 const [day, time] = timeKey.split('-');
-
+    
                 await addDoc(collection(db, 'appointments'), {
                     psychologistId,
                     psychologistName,
@@ -88,10 +90,13 @@ function Agenda({ open, psychologistId, psychologistName, psychologistPhotoURL, 
                     timestamp: new Date(),
                 });
             }
-
-            alert('Citas programadas com sucesso!');
+    
+            setModalMessage('Citas programadas com sucesso!');
+            setShowModal(true); // Exibe o modal
         } catch (error) {
             console.error('Erro ao programar cita:', error);
+            setModalMessage('Erro ao programar cita. Tente novamente.');
+            setShowModal(true); // Exibe o modal com mensagem de erro
         }
     };
 
@@ -150,6 +155,33 @@ function Agenda({ open, psychologistId, psychologistName, psychologistPhotoURL, 
                     </Button>
                 </Box>
             </DialogContent>
+            <Modal open={showModal} onClose={() => setShowModal(false)}>
+                <Box
+                    sx={{
+                        position: 'absolute',
+                        top: '50%',
+                        left: '50%',
+                        transform: 'translate(-50%, -50%)',
+                        bgcolor: 'background.paper',
+                        boxShadow: 24,
+                        p: 4,
+                        textAlign: 'center',
+                    }}
+                >
+                    <Typography variant="h6">Aviso</Typography>
+                    <Typography>{modalMessage}</Typography>
+                    <Button
+                        onClick={() => {
+                            setShowModal(false); // Fecha o modal
+                            onClose(); // Fecha o componente Agenda
+                        }}
+                        variant="contained"
+                        sx={{ mt: 2 }}
+                    >
+                        OK
+                    </Button>
+                </Box>
+            </Modal>
         </Dialog>
     );
 }
