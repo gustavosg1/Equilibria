@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Box, Grid, Avatar, Button, Typography, Paper, CircularProgress } from '@mui/material';
 import Menu from '../components/Menu';
-import ClientWelcome from '../components/ClientWelcome';
+import Welcome from '../components/Welcome';
 import EditarPerfil from '../components/EditarPerfilClient';
 import { useAuth } from '../firebase/Authentication';
 import { getFirestore, doc, getDoc } from 'firebase/firestore';
@@ -28,11 +28,11 @@ function ProfilePage() {
   let view;
 
   if (currentPage === 'welcome') {
-    view = <ClientWelcome />;
+    view = <Welcome />;
   } else if (currentPage === 'editarPerfil') {
     view = <EditarPerfil onPhotoUpdate={updatePhoto} />;
   } else {
-    view = <ClientWelcome />;
+    view = <Welcome />;
   }
 
   useEffect(() => {

@@ -1,83 +1,163 @@
 import React, { useEffect, useState } from 'react';
-import { Box, Grid2, Typography, Button, Paper } from '@mui/material';
-
-import EditarPerfilPsicolog from './EditarPerfilPsicolog';
-
+import { Box, Grid2, Typography, Button, Paper, Chip } from '@mui/material';
 import { useAuth } from "../firebase/Authentication";
-import { getFirestore, doc, getDoc,  } from 'firebase/firestore';
+import { getFirestore, doc, getDoc } from 'firebase/firestore';
 
-function PsychologistProfile ({onSelect}){
-    const { user } = useAuth();
-    const db = getFirestore();
-    const [description, setUserDescription ] = useState("");
+function PsychologistProfile({ onSelect }) {
+  const { user } = useAuth();
+  const db = getFirestore();
+  const [description, setUserDescription] = useState("Todavia no tienes una descripción");
+  const [studies, setStudies] = useState([]); // Estado para armazenar os estudos
+  const [languages, setLanguages] = useState([]); // Estado para armazenar idiomas
+  const [specialties, setSpecialties] = useState([]); // Estado para armazenar especialidades
 
-    useEffect(() => {
-        const fetchUserData = async () => {
+  useEffect(() => {
+    const fetchUserData = async () => {
+      if (user) {
+        try {
+          // Referência ao documento do usuário no Firestore
+          const userDocRef = doc(db, "psychologist", user.uid);
+          const userDoc = await getDoc(userDocRef);
 
-            if (user) {
-                try {
-                  // Referencia ao documento do usuário no Firestore
-                  const userDocRef = doc(db, "psychologist", user.uid);
-                  const userDoc = await getDoc(userDocRef);
-    
-              if (userDoc.exists()) {
-                const userData = userDoc.data();
-                setUserDescription(userData.description || "Todavia no tienes una descripción");
-
-              } else {
-                console.log("Documento do usuário não encontrado no Firestore.");
-              }
-            } catch (error) {
-              console.error("Erro ao buscar documento do usuário no Firestore:", error);
-            }
+          if (userDoc.exists()) {
+            const userData = userDoc.data();
+            setUserDescription(userData.description || "Todavia no tienes una descripción");
+            setStudies(userData.studies || []); // Define os estudos
+            setLanguages(userData.chosenLanguages || []); // Define os idiomas
+            setSpecialties(userData.therapy || []); // Define as especialidades
+          } else {
+            console.log("Documento do usuário não encontrado no Firestore.");
           }
-        };
-    
-        fetchUserData();
-      }, [user, db]); // Executa quando `user` ou `db` mudarem
+        } catch (error) {
+          console.error("Erro ao buscar documento do usuário no Firestore:", error);
+        }
+      }
+    };
 
-    return(
-        <Box>
-            <Grid2>
-                <Paper elevation={3} sx={{ p: 3, width: "75vw", height: "75vh"}}>
+    fetchUserData();
+  }, [user, db]); // Executa quando `user` ou `db` mudarem
 
-                  <div style={{ textAlign: "right" }}>
-                    <Button variant="contained" onClick= { () => onSelect("editarPerfil")}> Editar Perfil </Button>
-                  </div>
+  return (
+    <Box>
+      <Grid2>
+        <Paper elevation={3} sx={{ p: 3, width: "100%", height: "100%" }}>
+          <div style={{ textAlign: "right" }}>
+            <Button variant="contained" onClick={() => onSelect("editarPerfil")}> Editar Perfil </Button>
+          </div>
 
-                  <Typography variant="h5" sx={{ textAlign: "center", fontWeight: "bold" }}> Mi Perfil</Typography>
+          <Typography variant="h5" sx={{ textAlign: "center", fontWeight: "bold" }}> Mi Perfil</Typography>
 
-                  <br/>
+          <br />
 
-                  <Typography variant="h6" sx={{marginLeft: "10px", fontWeight: "bold"}}> Mi Descripción</Typography>
-                  <Box sx={{
-                    padding: "16px",
-                    border: "1px solid #ccc", // Borda ao redor do texto
-                    borderRadius: "8px",      // Bordas arredondadas
-                    backgroundColor: "#FAFFF9", // Fundo leve
-                    width: "100%",           // Ajustável (ou largura fixa como '300px')>
-                  }}>
-                      {description }
-                  </Box>
+          <Typography variant="h6" sx={{ marginLeft: "10px", fontWeight: "bold" }}> Mi Descripción</Typography>
+          <Box
+            sx={{
+              padding: "16px",
+              border: "1px solid #ccc",
+              borderRadius: "8px",
+              backgroundColor: "#FAFFF9",
+              width: "100%",
+            }}
+          >
+            {description}
+          </Box>
 
-                  <br/>
-                  <br/>
+          <br />
+          <br />
 
-                  <Typography variant="h6" sx={{marginLeft: "10px", fontWeight: "bold"}}> Mis Estudios</Typography>
-                  <Box sx={{
-                    padding: "16px",
-                    border: "1px solid #ccc", // Borda ao redor do texto
-                    borderRadius: "8px",      // Bordas arredondadas
-                    backgroundColor: "#FAFFF9", // Fundo leve
-                    width: "100%",           // Ajustável (ou largura fixa como '300px')>
-                  }}>
-                      {description }
-                  </Box>
+          <Typography variant="h6" sx={{ marginLeft: "10px", fontWeight: "bold" }}> Mis Estudios</Typography>
+          <Box
+            sx={{
+              padding: "16px",
+              border: "1px solid #ccc",
+              borderRadius: "8px",
+              backgroundColor: "#FAFFF9",
+              width: "100%",
+              display: "flex",
+              flexWrap: "wrap",
+              gap: "8px",
+            }}
+          >
+            {studies.length > 0 ? (
+              studies.map((study, index) => (
+                <Chip
+                  key={index}
+                  label={`${study.course}: ${study.school}`}
+                  sx={{ fontSize: "14px", padding: "4px 8px" }}
+                />
+              ))
+            ) : (
+              <Typography variant="body2" color="textSecondary">
+                Ainda não há informações de estudos.
+              </Typography>
+            )}
+          </Box>
 
-                </Paper>
-            </Grid2>
-        </Box>
-    )
+          <br />
+          <br />
+
+          <Typography variant="h6" sx={{ marginLeft: "10px", fontWeight: "bold" }}> Mis Idiomas</Typography>
+          <Box
+            sx={{
+              padding: "16px",
+              border: "1px solid #ccc",
+              borderRadius: "8px",
+              backgroundColor: "#FAFFF9",
+              width: "100%",
+              display: "flex",
+              flexWrap: "wrap",
+              gap: "8px",
+            }}
+          >
+            {languages.length > 0 ? (
+              languages.map((language, index) => (
+                <Chip
+                  key={index}
+                  label={language}
+                  sx={{ fontSize: "14px", padding: "4px 8px" }}
+                />
+              ))
+            ) : (
+              <Typography variant="body2" color="textSecondary">
+                Ainda não há informações de idiomas.
+              </Typography>
+            )}
+          </Box>
+
+          <br />
+          <br />
+
+          <Typography variant="h6" sx={{ marginLeft: "10px", fontWeight: "bold" }}> Especialidades</Typography>
+          <Box
+            sx={{
+              padding: "16px",
+              border: "1px solid #ccc",
+              borderRadius: "8px",
+              backgroundColor: "#FAFFF9",
+              width: "100%",
+              display: "flex",
+              flexWrap: "wrap",
+              gap: "8px",
+            }}
+          >
+            {specialties.length > 0 ? (
+              specialties.map((specialty, index) => (
+                <Chip
+                  key={index}
+                  label={specialty}
+                  sx={{ fontSize: "14px", padding: "4px 8px" }}
+                />
+              ))
+            ) : (
+              <Typography variant="body2" color="textSecondary">
+                Ainda não há informações de especialidades.
+              </Typography>
+            )}
+          </Box>
+        </Paper>
+      </Grid2>
+    </Box>
+  );
 }
 
 export default PsychologistProfile;

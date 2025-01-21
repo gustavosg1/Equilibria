@@ -53,7 +53,7 @@ const MisCitas = () => {
       const fetchOtherUserInfo = async () => {
         const otherUserId = isPsychologist ? appointment.clientId : appointment.psychologistId;
         if (otherUserId) {
-          const collectionName = isPsychologist ? 'users' : 'psychologists';
+          const collectionName = isPsychologist ? 'users' : 'psychologist';
           const otherUserDoc = await getDoc(doc(db, collectionName, otherUserId));
           if (otherUserDoc.exists()) {
             setOtherUserInfo(otherUserDoc.data());

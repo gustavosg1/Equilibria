@@ -205,7 +205,7 @@ function EditarPerfilPsicolog({ onPhotoUpdate }) {
     
     return (
       <Grid container style={{ minHeight: '100vh' }}>
-        <Grid item xs={12} style={{ width: '75vw' }}>
+        <Grid item xs={12} style={{ margin: '0 auto' }}> {/* Aumentando largura para 90% da tela */}
           <Box
             sx={{
               p: 4,
@@ -213,6 +213,7 @@ function EditarPerfilPsicolog({ onPhotoUpdate }) {
               borderRadius: 2,
               boxShadow: 2,
               backgroundColor: 'white',
+              width: '115%', // Expande para ocupar o espaço disponível
             }}
           >
             <Typography variant="h4" align="center" gutterBottom>

@@ -44,7 +44,7 @@ function Welcome(){
     return(
         <Col>
             <div className="d-flex align-items-center">
-                <h1 className="mb-4 me-3">Bienvenido, {name || user?.email}.</h1>
+                <h1 className="mb-4 me-3">Bienvenido(a), {name.split(" ")[0] || user?.name}.</h1>
                 <img
                     src="images/bien-venido.png"
                     alt="Mascot"

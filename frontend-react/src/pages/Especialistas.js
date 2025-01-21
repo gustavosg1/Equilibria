@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Slider, TextField, MenuItem, Box, Card, CardContent, CardMedia, Typography, Grid, Container, Select, Chip } from '@mui/material';
 import Menu from '../components/Menu';
-import { getFirestore, collection, getDocs } from 'firebase/firestore';
+import { getFirestore, collection, getDocs, getDoc, doc } from 'firebase/firestore';
 import Agenda from '../components/Agenda';
 
 function Especialistas() {
@@ -81,53 +81,115 @@ function Especialistas() {
     return isWithinPrice && matchesSpecialty && matchesLanguage && matchesNameSearch;
   });
 
-  const PsychologistCard = ({ psychologist }) => (
-    <Card
-      onClick={() => {
-        console.log("Psychologist ID selecionado:", psychologist.id); // Verifica o ID
-        setPsychologistId(psychologist.id); // Atualiza o ID primeiro
-        setTimeout(() => setOpen(true), 0); // Abre o modal após a atualização do estado
-      }}
-      sx={{ display: 'flex', mb: 2, p: 2, boxShadow: 3, width: '100%' }}>
-      <CardMedia
-        component="img"
-        sx={{ width: 150, height: 150, borderRadius: '50%' }}
-        image={psychologist.photoURL}
-        alt={psychologist.name}
-      />
-      <Box sx={{ display: 'flex', flexDirection: 'column', ml: 2 }}>
-        <CardContent>
-          <Typography variant="h6" component="div">
-            {psychologist.name}
+  const PsychologistCard = ({ psychologist }) => {
+    const [averageRate, setAverageRate] = useState(0); // Armazena a média de notas
+    const [reviewCount, setReviewCount] = useState(0); // Armazena a contagem de reviews
+  
+    useEffect(() => {
+      const fetchReviews = async () => {
+        try {
+          const reviewDoc = await getDoc(doc(db, 'reviews', psychologist.id)); // Busca as reviews pelo ID do psicólogo
+          if (reviewDoc.exists()) {
+            const reviews = reviewDoc.data().reviews || []; // Extrai as reviews
+            const totalRate = reviews.reduce((acc, review) => acc + review.rate, 0); // Soma todas as notas
+            setAverageRate(reviews.length > 0 ? totalRate / reviews.length : 0); // Calcula a média
+            setReviewCount(reviews.length); // Define o número de reviews
+          }
+        } catch (error) {
+          console.error('Erro ao buscar reviews:', error);
+        }
+      };
+  
+      fetchReviews();
+    }, [psychologist.id]);
+  
+    return (
+      <Card
+        onClick={() => {
+          setPsychologistId(psychologist.id);
+          setTimeout(() => setOpen(true), 0);
+        }}
+        sx={{ display: 'flex', mb: 2, p: 2, boxShadow: 3, width: '100%', position: 'relative' }}
+      >
+        <CardMedia
+          component="img"
+          sx={{ width: 150, height: 150, borderRadius: '50%' }}
+          image={psychologist.photoURL}
+          alt={psychologist.name}
+        />
+        <Box sx={{ display: 'flex', flexDirection: 'column', flex: 1, ml: 2 }}>
+          <CardContent>
+            <Typography variant="h6" component="div">
+              {psychologist.name}
+            </Typography>
+            <Typography variant="subtitle2" color="textSecondary">
+              COP:{psychologist.licenceNumber}
+            </Typography>
+            <Typography variant="body2" sx={{ mt: 1 }}>
+              {psychologist.description}
+            </Typography>
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mt: 1 }}>
+              {psychologist.therapy?.map((specialty, index) => (
+                <Chip key={index} label={specialty} />
+              ))}
+            </Box>
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mt: 1 }}>
+              {psychologist.chosenLanguages?.map((language, index) => (
+                <Chip key={index} label={language} />
+              ))}
+            </Box>
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mt: 1 }}>
+              {psychologist.studies?.map((studies, index) => (
+                <Chip key={index} label={`${studies.course}: ${studies.school}`} />
+              ))}
+            </Box>
+            <Typography variant="body1" fontWeight="bold" sx={{ mt: 2 }}>
+              €{psychologist.price}.00/h
+            </Typography>
+          </CardContent>
+        </Box>
+
+        {/* Seção inferior direita para nota, estrelas e reviews */}
+        <Box
+          sx={{
+            position: 'absolute', // Define posição relativa ao card
+            bottom: 8, // Alinha ao fundo com 8px de margem
+            right: 8, // Alinha à direita com 8px de margem
+            textAlign: 'right', // Texto alinhado à direita
+            display: 'flex', // Define layout flexível para alinhar conteúdo
+            flexDirection: 'column', // Coloca os elementos em coluna
+            alignItems: 'flex-end', // Alinha os itens à direita
+            gap: 0.5, // Espaçamento entre os itens
+          }}
+        >
+          {/* Nota */}
+          <Typography variant="caption" color="textSecondary">
+            Nota: {averageRate.toFixed(1)}
           </Typography>
-          <Typography variant="subtitle2" color="textSecondary">
-            COP:{psychologist.licenceNumber}
-          </Typography>
-          <Typography variant="body2" sx={{ mt: 1 }}>
-            {psychologist.description}
-          </Typography>
-          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mt: 1 }}>
-            {psychologist.therapy?.map((specialty, index) => (
-              <Chip key={index} label={specialty} />
+
+          {/* Estrelas */}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+            {[...Array(5)].map((_, index) => (
+              <Box
+                key={index}
+                sx={{
+                  width: 20,
+                  height: 20,
+                  backgroundColor: index < Math.round(averageRate) ? '#ffc107' : '#e0e0e0',
+                  clipPath: 'polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%)',
+                }}
+              />
             ))}
           </Box>
-          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mt: 1 }}>
-            {psychologist.chosenLanguages?.map((language, index) => (
-              <Chip key={index} label={language} />
-            ))}
-          </Box>
-          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mt: 1 }}>
-            {psychologist.studies?.map((studies, index) => (
-              <Chip key={index} label={`${studies.course}: ${studies.school}`} />
-            ))}
-          </Box>
-          <Typography variant="body1" fontWeight="bold" sx={{ mt: 2 }}>
-            €{psychologist.price}.00/h
+
+          {/* Número de reviews */}
+          <Typography variant="caption" color="textSecondary">
+            Reviews: {reviewCount}
           </Typography>
-        </CardContent>
-      </Box>
-    </Card>
-  );
+        </Box>
+      </Card>
+    );
+  };
 
   return (
     <Box>

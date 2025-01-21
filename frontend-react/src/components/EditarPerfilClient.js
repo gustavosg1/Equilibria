@@ -87,13 +87,7 @@ function EditarPerfil({ onPhotoUpdate }) {
   };
 
   return (
-    <Grid
-      container
-      justifyContent="center"
-      alignItems="flex-start" // Alinha o formulário no topo
-      sx={{ minHeight: '100vh', backgroundColor: '#f5f5f5', paddingTop: 5 }} // Adiciona padding superior
-    >
-      <Grid item xs={12} md={6} lg={5}>
+      <Grid item xs={12} md={10} lg={12}>
         <Box
           component="form"
           onSubmit={handleSubmit}
@@ -161,7 +155,6 @@ function EditarPerfil({ onPhotoUpdate }) {
             </Button>
           </Box>
         </Box>
-      </Grid>
 
       <Modal
         open={showModal}
