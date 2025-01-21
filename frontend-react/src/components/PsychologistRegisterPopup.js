@@ -202,7 +202,7 @@ const PsychologistRegisterPopup = ({ onClose }) => {
             />
             <Box mt={2} mb={3} textAlign="center">
               <Button variant="contained" component="label">
-                Escolher Foto
+                Subir ID
                 <input type="file" hidden onChange={handleRegistryPhoto} />
               </Button>
               {licencePhoto && (

@@ -119,11 +119,25 @@ const Videoconference = ({ appointmentId, psychologistId }) => {
 
   // Finaliza a videoconferência
   const handleEndCall = async () => {
-    if (!isPsychologist) {
-      await saveTranscription();
-      setShowReview(true);
-    } else {
-      setShowSummary(true);
+    try {
+      if (!appointmentId) {
+        console.error('ID do appointment não foi fornecido.');
+        return;
+      }
+  
+      // Atualiza o campo 'active' para 'false'
+      const appointmentRef = doc(db, 'appointments', appointmentId);
+      await updateDoc(appointmentRef, { active: false });
+      console.log('Campo "active" atualizado para false.');
+  
+      if (!isPsychologist) {
+        await saveTranscription();
+        setShowReview(true);
+      } else {
+        setShowSummary(true);
+      }
+    } catch (error) {
+      console.error('Erro ao finalizar a chamada:', error);
     }
   };
 

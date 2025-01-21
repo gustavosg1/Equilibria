@@ -92,7 +92,7 @@ function ProfilePagePsychologist() {
 
       <Grid container spacing={3} mt={4}>
         {/* Sidebar with user information and navigation buttons */}
-        <Grid item xs={12} md={3}>
+        <Grid item xs={12} md={2.8}>
           <Paper elevation={3} sx={{ p: 3, textAlign: 'center' }}>
             <Avatar
               src={photo}

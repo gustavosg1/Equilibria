@@ -6,7 +6,7 @@ import { getFirestore, doc, getDoc } from 'firebase/firestore';
 function PsychologistProfile({ onSelect }) {
   const { user } = useAuth();
   const db = getFirestore();
-  const [description, setUserDescription] = useState("Todavia no tienes una descripción");
+  const [description, setUserDescription] = useState([]); // Estado para armazenar a descrição como array
   const [studies, setStudies] = useState([]); // Estado para armazenar os estudos
   const [languages, setLanguages] = useState([]); // Estado para armazenar idiomas
   const [specialties, setSpecialties] = useState([]); // Estado para armazenar especialidades
@@ -21,7 +21,7 @@ function PsychologistProfile({ onSelect }) {
 
           if (userDoc.exists()) {
             const userData = userDoc.data();
-            setUserDescription(userData.description || "Todavia no tienes una descripción");
+            setUserDescription(userData.description ? [userData.description] : []); // Define a descrição como array
             setStudies(userData.studies || []); // Define os estudos
             setLanguages(userData.chosenLanguages || []); // Define os idiomas
             setSpecialties(userData.therapy || []); // Define as especialidades
@@ -42,7 +42,8 @@ function PsychologistProfile({ onSelect }) {
       <Grid2>
         <Paper elevation={3} sx={{ p: 3, width: "100%", height: "100%" }}>
           <div style={{ textAlign: "right" }}>
-            <Button variant="contained" onClick={() => onSelect("editarPerfil")}> Editar Perfil </Button>
+            <Button variant="contained" onClick={() => onSelect("editarPerfil")} sx={{backgroundColor: 'green',
+            '&:hover': { backgroundColor: 'darkgreen',},}}> Editar Perfil </Button>
           </div>
 
           <Typography variant="h5" sx={{ textAlign: "center", fontWeight: "bold" }}> Mi Perfil</Typography>
@@ -57,9 +58,24 @@ function PsychologistProfile({ onSelect }) {
               borderRadius: "8px",
               backgroundColor: "#FAFFF9",
               width: "100%",
+              display: "flex",
+              flexWrap: "wrap",
+              gap: "8px",
             }}
           >
-            {description}
+            {description.length > 0 ? (
+              description.map((desc, index) => (
+                <Chip
+                  key={index}
+                  label={desc}
+                  sx={{ fontSize: "14px", padding: "4px 8px" }}
+                />
+              ))
+            ) : (
+              <Typography variant="body2" color="textSecondary">
+                Todavia no tienes una descripción.
+              </Typography>
+            )}
           </Box>
 
           <br />
@@ -88,7 +104,7 @@ function PsychologistProfile({ onSelect }) {
               ))
             ) : (
               <Typography variant="body2" color="textSecondary">
-                Ainda não há informações de estudos.
+                Todavia no tienes informaciones de estudios.
               </Typography>
             )}
           </Box>
@@ -119,7 +135,7 @@ function PsychologistProfile({ onSelect }) {
               ))
             ) : (
               <Typography variant="body2" color="textSecondary">
-                Ainda não há informações de idiomas.
+                Todavia no tienes informaciones de idiomas que hablas.
               </Typography>
             )}
           </Box>
@@ -150,7 +166,7 @@ function PsychologistProfile({ onSelect }) {
               ))
             ) : (
               <Typography variant="body2" color="textSecondary">
-                Ainda não há informações de especialidades.
+                Todavia no tienes informaciones de sus especialidades.
               </Typography>
             )}
           </Box>

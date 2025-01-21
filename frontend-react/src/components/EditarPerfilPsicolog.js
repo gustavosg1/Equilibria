@@ -150,43 +150,53 @@ function EditarPerfilPsicolog({ onPhotoUpdate }) {
     }
   }
 
-  const getData = async () => {
-    try {
-      const user = auth.currentUser;
-      if (user) {
-        const uid = user.uid;
-        const docSnap = await getDoc(doc(db, 'psychologist', uid));
-        if (docSnap.exists()) {
-          const userInfo = docSnap.data();
-
-          setNome(userInfo.name || '');
-          setDataNascimento(userInfo.birthDate || '');
-          setDescription(userInfo.description || '');
-          setPhoto(userInfo.photoURL || null);
-          setStudiesList(userInfo.studies || []);
-          setVisible(userInfo.visible || false);
-          setPrice(userInfo.price || '');
-          setTherapy(userInfo.therapy || []);
-          setChosenLanguages(userInfo.chosenLanguages || []);
-
-          const availabilityFromFirestore = userInfo.availability || [];
-          setAvailability(
-            daysOfWeek.map((day) => {
-              const dayData = availabilityFromFirestore.find((a) => a.day === day) || {};
-              return {
-                day,
-                times: dayData.times || [],
-              };
-            })
-          );
-        } else {
-          console.error('Usuário não encontrado');
+  useEffect(() => {
+    const getData = async () => {
+      try {
+        const user = auth.currentUser;
+        if (user) {
+          const uid = user.uid;
+          const docSnap = await getDoc(doc(db, 'psychologist', uid));
+          if (docSnap.exists()) {
+            const userInfo = docSnap.data();
+  
+            setNome(userInfo.name || '');
+            setDataNascimento(userInfo.birthDate || '');
+            setDescription(userInfo.description || '');
+            setPhoto(userInfo.photoURL || null);
+            setStudiesList(userInfo.studies || []);
+            setVisible(userInfo.visible || false);
+            setPrice(userInfo.price || '');
+            setTherapy(userInfo.therapy || []);
+            setChosenLanguages(userInfo.chosenLanguages || []);
+  
+            // Atualiza o próximo ID com base no maior ID existente nos estudos carregados
+            const maxId = (userInfo.studies || []).reduce((max, study) => Math.max(max, study.id), 0);
+            setNextId(maxId + 1);
+  
+            const availabilityFromFirestore = userInfo.availability || [];
+            setAvailability(
+              daysOfWeek.map((day) => {
+                const dayData = availabilityFromFirestore.find((a) => a.day === day) || {};
+                return {
+                  day,
+                  times: dayData.times || [],
+                };
+              })
+            );
+          } else {
+            console.error('Usuário não encontrado');
+          }
         }
+      } catch (error) {
+        console.error('Erro ao carregar dados do usuário:', error);
       }
-    } catch (error) {
-      console.error('Erro ao carregar dados do usuário:', error);
+    };
+  
+    if (daysOfWeek.length > 0) {
+      getData();
     }
-  };
+  }, [daysOfWeek, db, auth]);
 
   useEffect(() => {
     const fetchInitialData = async () => {
@@ -197,12 +207,7 @@ function EditarPerfilPsicolog({ onPhotoUpdate }) {
     fetchInitialData();
   }, []);
 
-  useEffect(() => {
-    if (daysOfWeek.length > 0) {
-      getData();
-    }
-  }, [daysOfWeek]);
-    
+     
     return (
       <Grid container style={{ minHeight: '100vh' }}>
         <Grid item xs={12} style={{ margin: '0 auto' }}> {/* Aumentando largura para 90% da tela */}

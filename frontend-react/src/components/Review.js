@@ -13,53 +13,52 @@ import {
   Paper,
 } from '@mui/material';
 
-const Review = ({ psychologistId }) => { // Componente principal que recebe psychologistId como prop
-  const [rate, setRate] = useState(0); // Estado para armazenar a nota dada pelo usuário
-  const [comment, setComment] = useState(''); // Estado para armazenar o comentário do usuário
-  const [showModal, setShowModal] = useState(false); // Estado para controlar a visibilidade do modal
-  const navigate = useNavigate(); // Hook para redirecionar o usuário para outra página
+const Review = ({ psychologistId }) => {
+  const [rate, setRate] = useState(0);
+  const [comment, setComment] = useState('');
+  const [showModal, setShowModal] = useState(false);
+  const navigate = useNavigate();
 
-  const handleSubmit = async () => { // Função para enviar a avaliação
+  const handleSubmit = async () => {
     try {
-      const user = auth.currentUser; // Obtém o usuário autenticado atual
-      if (!user) throw new Error('Usuário não autenticado'); // Verifica se o usuário está autenticado
-      if (!psychologistId) throw new Error('psychologistId não fornecido'); // Verifica se o psychologistId está presente
+      const user = auth.currentUser;
+      if (!user) throw new Error('Usuário não autenticado');
+      if (!psychologistId) throw new Error('psychologistId não fornecido');
 
-      const clientId = user.uid; // Obtém o ID do usuário autenticado
-
-      // Referência ao documento do psicólogo na coleção "reviews"
+      const clientId = user.uid;
       const psychologistDocRef = doc(db, 'reviews', psychologistId);
-
-      // Verifica se o documento do psicólogo já existe no Firestore
       const psychologistDoc = await getDoc(psychologistDocRef);
-      if (!psychologistDoc.exists()) { // Se não existe, cria com campos iniciais
+
+      if (!psychologistDoc.exists()) {
         await setDoc(psychologistDocRef, {
-          psychologistId, // ID do psicólogo
-          reviews: [], // Inicializa o campo de avaliações como uma lista vazia
+          psychologistId,
+          reviews: [],
         });
       }
 
-      // Atualiza o documento do psicólogo adicionando uma nova avaliação
       await updateDoc(psychologistDocRef, {
-        reviews: arrayUnion({ // Usa arrayUnion para adicionar a avaliação sem sobrescrever as existentes
-          client: clientId, // ID do cliente que deixa a avaliação
-          date: Timestamp.now(), // Data atual
-          rate, // Nota fornecida pelo usuário
-          comment, // Comentário fornecido pelo usuário
+        reviews: arrayUnion({
+          client: clientId,
+          date: Timestamp.now(),
+          rate,
+          comment,
         }),
       });
 
-      // Exibe o modal de sucesso para o usuário
       setShowModal(true);
     } catch (error) {
-      console.error('Erro ao enviar a avaliação:', error); // Loga qualquer erro no console
+      console.error('Erro ao enviar a avaliação:', error);
     }
   };
 
+  const handleNoReview = () => {
+    navigate('/Perfil');
+  };
+
   return (
-    <Grid container spacing={3} sx={{ mt: 4, pl: 3 }}> {/* Adicionado layout de Grid para alinhamento */}
-      <Grid item xs={12} md={8}> {/* Mantendo a largura semelhante ao PsychologistProfile */}
-        <Paper elevation={3} sx={{ p: 3, width: '100%', height: '100%' }}> {/* Adicionando Paper para uniformidade */}
+    <Grid container spacing={3} sx={{ mt: 4, pl: 3 }}>
+      <Grid item xs={12} md={8}>
+        <Paper elevation={3} sx={{ p: 3, width: '100%', height: '100%' }}>
           <Typography variant="h5" align="center">
             Deixe sua avaliação
           </Typography>
@@ -78,11 +77,37 @@ const Review = ({ psychologistId }) => { // Componente principal que recebe psyc
             fullWidth
             sx={{ mt: 2 }}
           />
-          <Button variant="contained" color="primary" onClick={handleSubmit} sx={{ mt: 2 }}>
-            Enviar
-          </Button>
+          <Box
+            sx={{
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              gap: 2, // Espaçamento entre os botões
+              mt: 2,
+            }}
+          >
+            <Button
+              variant="contained"
+              onClick={handleSubmit}
+              sx={{
+                backgroundColor: 'green',
+                '&:hover': { backgroundColor: 'darkgreen' },
+              }}
+            >
+              Enviar
+            </Button>
+            <Button
+              variant="contained"
+              onClick={handleNoReview}
+              sx={{
+                backgroundColor: 'green',
+                '&:hover': { backgroundColor: 'darkgreen' },
+              }}
+            >
+              NO QUIERO EVALUAR
+            </Button>
+          </Box>
 
-          {/* Modal para mostrar mensagem de sucesso */}
           <Modal open={showModal} onClose={() => setShowModal(false)}>
             <Box
               sx={{
@@ -104,7 +129,11 @@ const Review = ({ psychologistId }) => { // Componente principal que recebe psyc
                   navigate('/Perfil');
                 }}
                 variant="contained"
-                sx={{ mt: 2 }}
+                sx={{
+                  mt: 2,
+                  backgroundColor: 'green',
+                  '&:hover': { backgroundColor: 'darkgreen' },
+                }}
               >
                 OK
               </Button>

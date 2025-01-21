@@ -89,12 +89,6 @@ function ProfilePage() {
               >
                 Editar Perfil
               </Button>
-              <Button variant="contained" fullWidth color="success" sx={{ mb: 2 }}>
-                Formas de Pago
-              </Button>
-              <Button variant="contained" fullWidth color="success">
-                Mis Reseñas
-              </Button>
             </Box>
           </Paper>
         </Grid>

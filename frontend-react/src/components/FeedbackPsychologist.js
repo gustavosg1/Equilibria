@@ -39,7 +39,6 @@ function FeedbackPsychologist() {
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'flex-start',
-        backgroundColor: '#f9f9f9',
         paddingTop: '30px',
         borderRadius: 2,
         boxShadow: 3,
@@ -80,13 +79,13 @@ function FeedbackPsychologist() {
         {comments.map((comment, index) => (
           <Grid item xs={12} sm={6} md={4} key={index}>
             <Paper
-              elevation={3}
+              elevation={3} 
               sx={{
                 p: 2,
                 textAlign: 'center',
                 backgroundColor: '#fff',
                 borderRadius: 1,
-                boxShadow: 2,
+                boxShadow: '0px 4px 10px rgba(7, 183, 30, 0.63)',
                 minHeight: 100,
               }}
             >
