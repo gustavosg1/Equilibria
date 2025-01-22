@@ -5,7 +5,6 @@ import Videoconference from '../components/Videoconference';
 import { collection, query, where, getDocs, doc, updateDoc, getDoc } from 'firebase/firestore';
 import { auth, db } from '../firebase/FirebaseConfig';
 
-
 const MisCitas = () => {
   const [tabValue, setTabValue] = useState(0);
   const [appointments, setAppointments] = useState([]);
@@ -15,6 +14,8 @@ const MisCitas = () => {
   const [selectedPsychologistId, setSelectedPsychologistId] = useState(null);
   const [selectedAppointmentID, setSelectedAppointmentID] = useState(null);
   const [isPsychologist, setIsPsychologist] = useState(false); // Determina o tipo de usuário logado
+  const [openModal, setOpenModal] = useState(false); // Controla a exibição do modal
+  const [transcription, setTranscription] = useState(''); // Armazena a transcrição
 
   // Verifica em qual coleção o usuário está
   useEffect(() => {
@@ -27,7 +28,6 @@ const MisCitas = () => {
         const psychologistDoc = await getDoc(doc(db, 'psychologist', userId));
         if (psychologistDoc.exists()) {
           setIsPsychologist(true); // Define que o usuário é um psicólogo
- 
           return;
         }
 
@@ -35,7 +35,6 @@ const MisCitas = () => {
         const userDoc = await getDoc(doc(db, 'users', userId));
         if (userDoc.exists()) {
           setIsPsychologist(false); // Define que o usuário é um cliente
- 
           return;
         }
 
@@ -48,7 +47,7 @@ const MisCitas = () => {
 
   const AppointmentCard = ({ appointment, onCancel }) => {
     const [otherUserInfo, setOtherUserInfo] = useState(null); // Armazena informações do outro usuário
-  
+
     // Busca informações do outro usuário (cliente ou psicólogo)
     useEffect(() => {
       const fetchOtherUserInfo = async () => {
@@ -61,10 +60,25 @@ const MisCitas = () => {
           }
         }
       };
-  
+
       fetchOtherUserInfo();
     }, [appointment, isPsychologist]);
-  
+
+    const handleTranscription = async () => {
+      setOpenModal(true); // Abre o modal
+      try {
+        const appointmentDoc = await getDoc(doc(db, 'appointments', appointment.id));
+        if (appointmentDoc.exists() && appointmentDoc.data().transcription) {
+          setTranscription(appointmentDoc.data().transcription);
+        } else {
+          setTranscription('No hay resumen para esta cita');
+        }
+      } catch (error) {
+        console.error('Erro ao buscar transcrição:', error);
+        setTranscription('Erro ao buscar transcrição');
+      }
+    };
+
     return (
       <Card sx={{ display: 'flex', mb: 2, boxShadow: 3 }}>
         <CardMedia
@@ -79,7 +93,7 @@ const MisCitas = () => {
           </Typography>
           <Typography variant="body1"><strong>Fecha:</strong> {appointment.day}</Typography>
           <Typography variant="body1" sx={{ mb: 2 }}><strong>Hora:</strong> {appointment.time}</Typography>
-          
+
           {/* Renderizar os botões apenas se active === true */}
           {appointment.active && (
             <Box sx={{ display: 'flex', gap: 2 }}>
@@ -102,6 +116,30 @@ const MisCitas = () => {
               <Button variant="outlined" color="error" onClick={() => onCancel(appointment.id)}>
                 Anular
               </Button>
+            </Box>
+          )}
+          {/* Ícone para transcrição */}
+          {!appointment.active && (
+            <Box
+              sx={{
+                display: 'flex',
+                justifyContent: 'flex-end',
+                alignItems: 'center',
+                height: '100%',
+                paddingRight: '50px',
+              }}
+            >
+              <img
+                src="images/papiro.png"
+                alt="Transcription Icon"
+                style={{
+                  width: '80px',
+                  height: '80px',
+                  cursor: 'pointer',
+                  transform: 'translateY(-60%)',
+                }}
+                onClick={handleTranscription}
+              />
             </Box>
           )}
         </Box>
@@ -164,23 +202,40 @@ const MisCitas = () => {
                   <AppointmentCard appointment={appointment} onCancel={async (id) => {
                     try {
                       await updateDoc(doc(db, 'appointments', id), { active: false }); // Atualiza no Firestore
-                      // Atualiza o estado local para refletir a mudança
-                      setAppointments((prev) =>
-                        prev.map((a) =>
-                          a.id === id ? { ...a, active: false } : a // Marca o agendamento como inativo
-                        )
+                      setAppointments(prev =>
+                        prev.map(a => (a.id === id ? { ...a, active: false } : a))
                       );
                     } catch (error) {
                       console.error('Erro ao cancelar consulta:', error);
                     }
-                  }}
-                />
-</Grid>
+                  }} />
+                </Grid>
               ))}
             </Grid>
           )}
         </Container>
       )}
+      {/* Modal */}
+      <Modal open={openModal} onClose={() => setOpenModal(false)}>
+        <Box
+          sx={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            bgcolor: 'background.paper',
+            boxShadow: 24,
+            p: 4,
+            textAlign: 'center',
+          }}
+        >
+          <Typography variant="h6">Transcripción</Typography>
+          <Typography>{transcription}</Typography>
+          <Button onClick={() => setOpenModal(false)} variant="contained" sx={{ mt: 2 }}>
+            Cerrar
+          </Button>
+        </Box>
+      </Modal>
     </Box>
   );
 };
