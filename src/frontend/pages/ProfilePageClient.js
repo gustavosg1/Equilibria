@@ -1,73 +1,49 @@
 import React, { useEffect, useState } from 'react';
-import { Box, Grid, Avatar, Button, Typography, Paper, CircularProgress } from '@mui/material';
+import { Box, Grid, Avatar, Button, Typography, Paper } from '@mui/material';
 import Menu from '../components/Menu';
 import Welcome from '../views/Welcome';
-import EditarPerfil from '../views/EditarPerfilClient';
+import EditarPerfilClient from '../views/EditarPerfilClient';
 import { useAuth } from '../../backend/config/Authentication';
-import { getFirestore, doc, getDoc } from 'firebase/firestore';
+import { fetchUserPhoto, updateUserPhoto } from '../../backend/services/userService';
 
-
-function ProfilePage() {
+function ProfilePageClient() {
   const { user } = useAuth();
   const [currentPage, setCurrentPage] = useState('welcome');
-  const db = getFirestore();
   const [photo, setPhoto] = useState('');
 
-  async function updatePhoto() {
-    const docRef = doc(db, 'users', user.uid);
-    const docSnap = await getDoc(docRef);
-
-    if (docSnap.exists()) {
-      const photoURL = docSnap.data().photoURL;
-      setPhoto(`${photoURL}?t=${Date.now()}`);
-    } else {
-      console.error('Documento do usuário não encontrado!');
+  const handlePhotoUpdate = async () => {
+    try {
+      const updatedPhoto = await updateUserPhoto(user.uid);
+      setPhoto(updatedPhoto);
+    } catch (error) {
+      console.error('Erro na atualização:', error.message);
     }
-  }
-
-  let view;
-
-  if (currentPage === 'welcome') {
-    view = <Welcome />;
-  } else if (currentPage === 'editarPerfil') {
-    view = <EditarPerfil onPhotoUpdate={updatePhoto} />;
-  } else {
-    view = <Welcome />;
-  }
+  };
 
   useEffect(() => {
-    const fetchUser = async () => {
-      if (user) {
+    const loadPhoto = async () => {
+      if (user?.uid) {
         try {
-          const userDocRef = doc(db, 'users', user.uid);
-          const userDoc = await getDoc(userDocRef);
-
-          if (userDoc.exists()) {
-            const userData = userDoc.data();
-            setPhoto(userData.photoURL);
-          } else {
-            console.log('Documento do usuário não encontrado no Firestore.');
-          }
+          const photoURL = await fetchUserPhoto(user.uid);
+          setPhoto(photoURL);
         } catch (error) {
-          console.error('Erro ao buscar documento do usuário no Firestore:', error);
+          console.error('Erro ao carregar foto:', error.message);
         }
       }
     };
-    fetchUser();
-  }, [user, db, photo]);
+    loadPhoto();
+  }, [user]);
 
   return (
     <Box>
-      {/* Menu */}
       <Menu />
-
+      
       <Grid container spacing={3} mt={4}>
-        {/* User Information Sidebar */}
         <Grid item xs={12} md={3}>
           <Paper elevation={3} sx={{ p: 3, textAlign: 'center' }}>
             <Avatar
               src={photo}
-              alt="Gustavo"
+              alt="Foto do perfil"
               sx={{ width: 150, height: 150, mx: 'auto', mb: 2 }}
             />
             <Box>
@@ -93,13 +69,15 @@ function ProfilePage() {
           </Paper>
         </Grid>
 
-        {/* Main Content Section */}
         <Grid item xs={12} md={8}>
-          {view}
+          {currentPage === 'welcome' && <Welcome />}
+          {currentPage === 'editarPerfil' && (
+            <EditarPerfilClient onPhotoUpdate={handlePhotoUpdate} />
+          )}
         </Grid>
       </Grid>
     </Box>
   );
 }
 
-export default ProfilePage;
+export default ProfilePageClient;
