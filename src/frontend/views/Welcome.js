@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Col } from 'react-bootstrap';
 import { useAuth } from "../../backend/config/Authentication";
 import { Card, Box, Typography, Button } from '@mui/material';
-import AppointmentCard from '../components/AppointmentCard';
+import AppointmentCard2 from '../components/AppointmentCard2';
 import { getUserType, getUserName } from '../../backend/services/userService';
 import { fetchActiveAppointments } from '../../backend/services/appointmentService';
 
@@ -61,7 +61,7 @@ function Welcome() {
         <h3 className="mb-3">Mis Próximas Citas:</h3>
         {appointments.length > 0 ? (
           appointments.map(appointment => (
-            <AppointmentCard 
+            <AppointmentCard2 
               key={appointment.id} 
               appointment={appointment}
               isPsychologist={isPsychologist}
