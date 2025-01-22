@@ -1,177 +1,135 @@
 import React, { useEffect, useState } from 'react';
-import { Box, Grid2, Typography, Button, Paper, Chip } from '@mui/material';
+import { Box, Typography, Button, Paper, Chip, CircularProgress } from '@mui/material';
 import { useAuth } from "../../backend/config/Authentication";
-import { getFirestore, doc, getDoc } from 'firebase/firestore';
+import { getPsychologistProfile } from '../../backend/services/psychologistService';
 
 function PsychologistProfile({ onSelect }) {
   const { user } = useAuth();
-  const db = getFirestore();
-  const [description, setUserDescription] = useState([]); // Estado para armazenar a descrição como array
-  const [studies, setStudies] = useState([]); // Estado para armazenar os estudos
-  const [languages, setLanguages] = useState([]); // Estado para armazenar idiomas
-  const [specialties, setSpecialties] = useState([]); // Estado para armazenar especialidades
+  const [profileData, setProfileData] = useState({
+    description: [],
+    studies: [],
+    languages: [],
+    specialties: [],
+  });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
+  // Busca os dados do perfil
   useEffect(() => {
-    const fetchUserData = async () => {
-      if (user) {
-        try {
-          // Referência ao documento do usuário no Firestore
-          const userDocRef = doc(db, "psychologist", user.uid);
-          const userDoc = await getDoc(userDocRef);
-
-          if (userDoc.exists()) {
-            const userData = userDoc.data();
-            setUserDescription(userData.description ? [userData.description] : []); // Define a descrição como array
-            setStudies(userData.studies || []); // Define os estudos
-            setLanguages(userData.chosenLanguages || []); // Define os idiomas
-            setSpecialties(userData.therapy || []); // Define as especialidades
-          } else {
-            console.log("Documento do usuário não encontrado no Firestore.");
-          }
-        } catch (error) {
-          console.error("Erro ao buscar documento do usuário no Firestore:", error);
+    const loadProfile = async () => {
+      try {
+        if (user?.uid) {
+          const data = await getPsychologistProfile(user.uid);
+          setProfileData(data);
         }
+      } catch (error) {
+        setError(`Erro ao carregar perfil: ${error.message}`);
+      } finally {
+        setLoading(false);
       }
     };
+    loadProfile();
+  }, [user]);
 
-    fetchUserData();
-  }, [user, db]); // Executa quando `user` ou `db` mudarem
+  // Componente auxiliar para renderizar seções
+  const ProfileSection = ({ title, items, emptyMessage }) => (
+    <Box mb={4}>
+      <Typography variant="h6" sx={{ ml: 1, fontWeight: 'bold' }}>{title}</Typography>
+      <Box
+        sx={{
+          p: 2,
+          border: '1px solid #ccc',
+          borderRadius: 2,
+          bgcolor: '#FAFFF9',
+          display: 'flex',
+          flexWrap: 'wrap',
+          gap: 1,
+          mt: 1
+        }}
+      >
+        {items.length > 0 ? (
+          items.map((item, index) => (
+            <Chip
+              key={index}
+              label={item}
+              sx={{ fontSize: '14px', p: '4px 8px' }}
+            />
+          ))
+        ) : (
+          <Typography variant="body2" color="textSecondary">
+            {emptyMessage}
+          </Typography>
+        )}
+      </Box>
+    </Box>
+  );
+
+  if (loading) {
+    return (
+      <Box display="flex" justifyContent="center" mt={4}>
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  if (error) {
+    return (
+      <Typography color="error" textAlign="center" mt={4}>
+        {error}
+      </Typography>
+    );
+  }
 
   return (
     <Box>
-      <Grid2>
-        <Paper elevation={3} sx={{ p: 3, width: "100%", height: "100%" }}>
-          <div style={{ textAlign: "right" }}>
-            <Button variant="contained" onClick={() => onSelect("editarPerfil")} sx={{backgroundColor: 'green',
-            '&:hover': { backgroundColor: 'darkgreen',},}}> Editar Perfil </Button>
-          </div>
-
-          <Typography variant="h5" sx={{ textAlign: "center", fontWeight: "bold" }}> Mi Perfil</Typography>
-
-          <br />
-
-          <Typography variant="h6" sx={{ marginLeft: "10px", fontWeight: "bold" }}> Mi Descripción</Typography>
-          <Box
-            sx={{
-              padding: "16px",
-              border: "1px solid #ccc",
-              borderRadius: "8px",
-              backgroundColor: "#FAFFF9",
-              width: "100%",
-              display: "flex",
-              flexWrap: "wrap",
-              gap: "8px",
+      <Paper elevation={3} sx={{ p: 3, width: "100%" }}>
+        {/* Botão de edição */}
+        <Box textAlign="right">
+          <Button 
+            variant="contained" 
+            onClick={() => onSelect("editarPerfil")}
+            sx={{ 
+              bgcolor: 'green', 
+              '&:hover': { bgcolor: 'darkgreen' } 
             }}
           >
-            {description.length > 0 ? (
-              description.map((desc, index) => (
-                <Chip
-                  key={index}
-                  label={desc}
-                  sx={{ fontSize: "14px", padding: "4px 8px" }}
-                />
-              ))
-            ) : (
-              <Typography variant="body2" color="textSecondary">
-                Todavia no tienes una descripción.
-              </Typography>
-            )}
-          </Box>
+            Editar Perfil
+          </Button>
+        </Box>
 
-          <br />
-          <br />
+        {/* Título da página */}
+        <Typography variant="h5" textAlign="center" fontWeight="bold" mb={4}>
+          Mi Perfil
+        </Typography>
 
-          <Typography variant="h6" sx={{ marginLeft: "10px", fontWeight: "bold" }}> Mis Estudios</Typography>
-          <Box
-            sx={{
-              padding: "16px",
-              border: "1px solid #ccc",
-              borderRadius: "8px",
-              backgroundColor: "#FAFFF9",
-              width: "100%",
-              display: "flex",
-              flexWrap: "wrap",
-              gap: "8px",
-            }}
-          >
-            {studies.length > 0 ? (
-              studies.map((study, index) => (
-                <Chip
-                  key={index}
-                  label={`${study.course}: ${study.school}`}
-                  sx={{ fontSize: "14px", padding: "4px 8px" }}
-                />
-              ))
-            ) : (
-              <Typography variant="body2" color="textSecondary">
-                Todavia no tienes informaciones de estudios.
-              </Typography>
-            )}
-          </Box>
+        {/* Seção de Descrição */}
+        <ProfileSection 
+          title="Mi Descripción" 
+          items={profileData.description} 
+          emptyMessage="Todavía no tienes una descripción" 
+        />
 
-          <br />
-          <br />
+        {/* Seção de Estudos */}
+        <ProfileSection 
+          title="Mis Estudios" 
+          items={profileData.studies.map(s => `${s.course}: ${s.school}`)} 
+          emptyMessage="Todavía no tienes informaciones de estudios" 
+        />
 
-          <Typography variant="h6" sx={{ marginLeft: "10px", fontWeight: "bold" }}> Mis Idiomas</Typography>
-          <Box
-            sx={{
-              padding: "16px",
-              border: "1px solid #ccc",
-              borderRadius: "8px",
-              backgroundColor: "#FAFFF9",
-              width: "100%",
-              display: "flex",
-              flexWrap: "wrap",
-              gap: "8px",
-            }}
-          >
-            {languages.length > 0 ? (
-              languages.map((language, index) => (
-                <Chip
-                  key={index}
-                  label={language}
-                  sx={{ fontSize: "14px", padding: "4px 8px" }}
-                />
-              ))
-            ) : (
-              <Typography variant="body2" color="textSecondary">
-                Todavia no tienes informaciones de idiomas que hablas.
-              </Typography>
-            )}
-          </Box>
+        {/* Seção de Idiomas */}
+        <ProfileSection 
+          title="Mis Idiomas" 
+          items={profileData.languages} 
+          emptyMessage="Todavía no tienes informaciones de idiomas que hablas" 
+        />
 
-          <br />
-          <br />
-
-          <Typography variant="h6" sx={{ marginLeft: "10px", fontWeight: "bold" }}> Especialidades</Typography>
-          <Box
-            sx={{
-              padding: "16px",
-              border: "1px solid #ccc",
-              borderRadius: "8px",
-              backgroundColor: "#FAFFF9",
-              width: "100%",
-              display: "flex",
-              flexWrap: "wrap",
-              gap: "8px",
-            }}
-          >
-            {specialties.length > 0 ? (
-              specialties.map((specialty, index) => (
-                <Chip
-                  key={index}
-                  label={specialty}
-                  sx={{ fontSize: "14px", padding: "4px 8px" }}
-                />
-              ))
-            ) : (
-              <Typography variant="body2" color="textSecondary">
-                Todavia no tienes informaciones de sus especialidades.
-              </Typography>
-            )}
-          </Box>
-        </Paper>
-      </Grid2>
+        {/* Seção de Especialidades */}
+        <ProfileSection 
+          title="Especialidades" 
+          items={profileData.specialties} 
+          emptyMessage="Todavía no tienes informaciones de sus especialidades" 
+        />
+      </Paper>
     </Box>
   );
 }

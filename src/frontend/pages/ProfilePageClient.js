@@ -11,10 +11,9 @@ function ProfilePageClient() {
   const [currentPage, setCurrentPage] = useState('welcome');
   const [photo, setPhoto] = useState('');
 
-  const handlePhotoUpdate = async () => {
+  const handlePhotoUpdate = async (newPhotoURL) => {
     try {
-      const updatedPhoto = await updateUserPhoto(user.uid);
-      setPhoto(updatedPhoto);
+      setPhoto(newPhotoURL);
     } catch (error) {
       console.error('Erro na atualização:', error.message);
     }
@@ -61,7 +60,11 @@ function ProfilePageClient() {
                 fullWidth
                 color="success"
                 sx={{ mb: 2 }}
-                onClick={() => setCurrentPage('editarPerfil')}
+                onClick={() => {
+                  console.log('Estado antes:', currentPage); // Debug
+                  setCurrentPage('editarPerfil');
+                  console.log('Estado depois:', currentPage); // Debug
+                }}
               >
                 Editar Perfil
               </Button>

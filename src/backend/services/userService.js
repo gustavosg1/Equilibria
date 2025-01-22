@@ -71,14 +71,10 @@ export const fetchUserPhoto = async (userId) => {
   }
 };
 
-export const updateUserPhoto = async (userId) => {
-  const db = getFirestore();
+export const updateUserPhoto = async (userId, newPhotoURL) => {
   try {
-    const userDoc = await getDoc(doc(db, 'users', userId));
-    if (userDoc.exists()) {
-      return `${userDoc.data().photoURL}?t=${Date.now()}`;
-    }
-    return '';
+    await setDoc(doc(db, 'users', userId), { photoURL: newPhotoURL }, { merge: true });
+    return newPhotoURL;
   } catch (error) {
     throw new Error('Erro ao atualizar foto');
   }

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Box, Typography, Container, Grid, Tabs, Tab, Modal, CircularProgress, Button } from '@mui/material';
 import Menu from '../components/Menu';
 import Videoconference from '../views/Videoconference';
-import PsychologistCard from '../components/PsychologistCard';
+import AppointmentCard from '../components/AppointmentCard';
 import { fetchAppointments, cancelAppointment } from '../../backend/services/appointmentService';
 import { summarizeTranscription } from '../../backend/services/transcriptionService';
 import { checkUserRole, getUserInfo } from '../../backend/services/userService';
@@ -76,7 +76,7 @@ const MisCitas = () => {
 
   // Filtrar consultas ativas/inativas
   const filteredAppointments = appointments.filter(appointment => 
-    tabValue === 0 ? appointment.active : !appointment.active
+    tabValue === 0 ? appointment?.active : !appointment?.active
   );
 
   return (
@@ -110,7 +110,7 @@ const MisCitas = () => {
             <Grid container spacing={3}>
               {filteredAppointments.map(appointment => (
                 <Grid item xs={12} key={appointment.id}>
-                  <PsychologistCard
+                  <AppointmentCard
                     appointment={appointment}
                     isPsychologist={isPsychologist}
                     onStartCall={() => {
