@@ -1,9 +1,8 @@
 {
   "ExpandedNodes": [
     "",
-    "\\frontend-react",
-    "\\frontend-react\\src"
+    "\\src"
   ],
-  "SelectedNode": "\\frontend-react\\src\\App.js",
+  "SelectedNode": "\\src\\App.css",
   "PreviewInSolutionExplorer": false
 }

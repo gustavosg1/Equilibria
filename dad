@@ -1,0 +1,108 @@
+[33mcommit 58c607e90048f2aa778eb7caeca2909986e04c0d[m[33m ([m[1;36mHEAD -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m)[m
+Author: gustavosg1 <gustavo_sg1@hotmail.com>
+Date:   Sat Jan 18 20:01:25 2025 +0100
+
+    videoconference
+
+[33mcommit 351166e045ebeddf1d4dff2b3ab5ed0a3bd6b814[m
+Author: gustavosg1 <gustavo_sg1@hotmail.com>
+Date:   Fri Jan 10 20:51:34 2025 +0100
+
+    appointment card created
+
+[33mcommit 7f29ce262d4cf79fb86d80311374431fedf3cbc4[m
+Author: gustavosg1 <gustavo_sg1@hotmail.com>
+Date:   Fri Jan 10 19:36:23 2025 +0100
+
+    cita enviada a base de dados
+
+[33mcommit 57fe5220953e075a9cbda59aaa4cab9e7ee5da87[m
+Author: gustavosg1 <gustavo_sg1@hotmail.com>
+Date:   Fri Jan 10 17:40:26 2025 +0100
+
+    agenda in the especialista card
+
+[33mcommit c942a39c7199226deb53accf4d4abaa7a9edc7ec[m
+Author: gustavosg1 <gustavo_sg1@hotmail.com>
+Date:   Thu Jan 9 19:38:22 2025 +0100
+
+    creacio dels horaris
+
+[33mcommit d670180a5d1cf4da62899da03dbe3bfe37d0bf7a[m
+Author: gustavosg1 <gustavo_sg1@hotmail.com>
+Date:   Wed Jan 8 15:23:48 2025 +0100
+
+    fixat link en menu per pàgina Home
+
+[33mcommit a8b6caddac8200e065bc4ea9a47a10b01addb548[m
+Author: gustavosg1 <gustavo_sg1@hotmail.com>
+Date:   Wed Jan 8 14:25:32 2025 +0100
+
+    creat pagina especialistes
+
+[33mcommit 708054ba416256e1abdd5f66417c1ce3753456a7[m
+Author: gustavosg1 <gustavo_sg1@hotmail.com>
+Date:   Sun Jan 5 18:18:20 2025 +0100
+
+    therapies in perfil
+
+[33mcommit 92c5c4e404f2d1782f1bc039620c6acb34fbd7ba[m
+Author: gustavosg1 <gustavo_sg1@hotmail.com>
+Date:   Sun Jan 5 16:19:55 2025 +0100
+
+    posat preu en editar perfil psicoleg
+
+[33mcommit f8a27eccd33d00802ae290711ea1b5fe3d1421d8[m
+Author: gustavosg1 <gustavo_sg1@hotmail.com>
+Date:   Fri Jan 3 16:40:13 2025 +0100
+
+    llista de psicolegs
+
+[33mcommit d76c695abc42fc4aef73fca4819faf730cb57ec2[m
+Author: gustavosg1 <gustavo_sg1@hotmail.com>
+Date:   Wed Dec 18 18:30:46 2024 +0100
+
+    editar perfil psicologs
+
+[33mcommit 76a4bcb0179466ba49b576cb4022ecfa16215ed6[m
+Author: gustavosg1 <gustavo_sg1@hotmail.com>
+Date:   Thu Dec 12 21:25:36 2024 +0100
+
+    perfil psicolog creat
+
+[33mcommit 34b2b5506aa0a6f89d232b82e1dded9124554263[m
+Author: gustavosg1 <gustavo_sg1@hotmail.com>
+Date:   Sat Dec 7 18:15:20 2024 +0100
+
+    home page psicologists
+
+[33mcommit d58569e2e5e9345202049d31972f3df334e82cc7[m
+Author: gustavosg1 <gustavo_sg1@hotmail.com>
+Date:   Wed Dec 4 20:11:34 2024 +0100
+
+    creat formulari psicolog
+
+[33mcommit d2a66897bf832a9d45bbf4f661b695abf0f693b2[m
+Merge: 7bcfc14e 5c320195
+Author: gustavosg1 <gustavo_sg1@hotmail.com>
+Date:   Fri Nov 29 15:21:49 2024 +0100
+
+    Merge branch 'main' of https://github.com/gustavosg1/Equilibria
+
+[33mcommit 7bcfc14e21a4b1b730573a429d91392655e92724[m
+Author: gustavosg1 <gustavo_sg1@hotmail.com>
+Date:   Fri Nov 29 15:09:39 2024 +0100
+
+    login e home
+
+[33mcommit 5c32019593aaaa4797cf121ae1af033320b43ed7[m
+Author: gustavosg1 <gustavo_sg1@hotmail.com>
+Date:   Fri Nov 15 00:42:17 2024 +0100
+
+    creació model-vistra-controlador i conexio amb firebase.
+
+[33mcommit c4909df43f533afda9d5043409fccdf667e554a0[m
+Author: gustavosg1 <gustavo_sg1@hotmail.com>
+Date:   Thu Oct 17 22:19:12 2024 +0200
+
+    first commit
