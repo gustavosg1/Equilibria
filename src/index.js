@@ -4,7 +4,7 @@ import './index.css';
 import App from './frontend/App';
 import reportWebVitals from './reportWebVitals';
 import 'bootstrap/dist/css/bootstrap.min.css';
-import { AuthProvider } from './firebase/Authentication.js';
+import { AuthProvider } from './backend/config/Authentication.js';
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(

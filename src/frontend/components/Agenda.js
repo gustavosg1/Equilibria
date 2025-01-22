@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { db, auth } from '../../firebase/FirebaseConfig';
+import { db, auth } from '../../backend/config/FirebaseConfig';
 import { doc, getDoc } from 'firebase/firestore';
 import { Dialog, DialogTitle, DialogContent, Typography, CircularProgress, FormLabel, Chip, Button, Box, Modal } from '@mui/material';
 import { collection, addDoc } from 'firebase/firestore';

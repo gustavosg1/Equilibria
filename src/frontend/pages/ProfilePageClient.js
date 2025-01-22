@@ -3,7 +3,7 @@ import { Box, Grid, Avatar, Button, Typography, Paper, CircularProgress } from '
 import Menu from '../components/Menu';
 import Welcome from '../views/Welcome';
 import EditarPerfil from '../views/EditarPerfilClient';
-import { useAuth } from '../../firebase/Authentication';
+import { useAuth } from '../../backend/config/Authentication';
 import { getFirestore, doc, getDoc } from 'firebase/firestore';
 
 

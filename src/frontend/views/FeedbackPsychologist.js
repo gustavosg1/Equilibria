@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Box, Typography, Grid, Paper } from '@mui/material';
 import { getFirestore, doc, getDoc } from 'firebase/firestore';
-import { useAuth } from '../../firebase/Authentication';
+import { useAuth } from '../../backend/config/Authentication';
 
 function FeedbackPsychologist() {
   const [averageRate, setAverageRate] = useState(0); // Stores the average rating

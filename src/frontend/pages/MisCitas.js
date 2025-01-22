@@ -3,7 +3,7 @@ import { Box, Typography, Button, Container, Card, CardMedia, Grid, Tabs, Tab, M
 import Menu from '../components/Menu';
 import Videoconference from '../views/Videoconference';
 import { collection, query, where, getDocs, doc, updateDoc, getDoc } from 'firebase/firestore';
-import { auth, db } from '../../firebase/FirebaseConfig';
+import { auth, db } from '../../backend/config/FirebaseConfig';
 import axios from 'axios'; // Adicione o axios para fazer chamadas HTTP
 
 const MisCitas = () => {

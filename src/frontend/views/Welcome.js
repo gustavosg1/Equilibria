@@ -1,9 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { Col } from 'react-bootstrap';
-import { useAuth } from "../../firebase/Authentication";
+import { useAuth } from "../../backend/config/Authentication";
 import { getFirestore, doc, getDoc, getDocs, collection, query, where } from "firebase/firestore";
 import { Card, CardMedia, Box, Typography, Button } from '@mui/material';
-import { auth } from '../../firebase/FirebaseConfig';
 
 function Welcome() {
   const { user } = useAuth();

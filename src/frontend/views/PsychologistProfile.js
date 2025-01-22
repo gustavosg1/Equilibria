@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Box, Grid2, Typography, Button, Paper, Chip } from '@mui/material';
-import { useAuth } from "../../firebase/Authentication";
+import { useAuth } from "../../backend/config/Authentication";
 import { getFirestore, doc, getDoc } from 'firebase/firestore';
 
 function PsychologistProfile({ onSelect }) {

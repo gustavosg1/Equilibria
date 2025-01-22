@@ -1,7 +1,7 @@
 import React, {useState, useEffect} from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { signOut } from 'firebase/auth';
-import { auth, db } from '../../firebase/FirebaseConfig';
+import { auth, db } from '../../backend/config/FirebaseConfig';
 import { AppBar, Toolbar, IconButton, Button, Box } from '@mui/material';
 import { styled } from '@mui/system';
 import {doc, getDoc} from 'firebase/firestore'

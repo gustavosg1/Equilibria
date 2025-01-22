@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { db, auth } from '../../firebase/FirebaseConfig';
+import { db, auth } from '../../backend/config/FirebaseConfig';
 import { doc, updateDoc, arrayUnion, getDoc, setDoc, Timestamp } from 'firebase/firestore';
 import {
   Box,

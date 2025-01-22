@@ -1,102 +1,63 @@
 import React, { useState } from "react";
-import { GoogleAuthProvider, OAuthProvider, signInWithPopup, signInWithEmailAndPassword } from "firebase/auth";
-import { getFirestore, doc, setDoc } from "firebase/firestore";
-import { auth } from "../../firebase/FirebaseConfig.js";
 import { useNavigate } from "react-router-dom";
 import { TextField, Button, Container, Grid, Typography, Box } from "@mui/material";
-import AccountTypePopup from "../components/AccountTypePopup.js";
-import ClientRegisterPopup from "../components/ClientRegisterPopup.js";
-import PsychologistRegisterPopup from "../components/PsychologistRegisterPopup.js";
-import { getDoc } from "firebase/firestore";
+
+import { loginWithEmail, loginWithGoogle, loginWithMicrosoft } from "../../backend/services/authService";
+import { createUserDocument, checkUserRole } from "../../backend/services/userService";
+
+import AccountTypePopup from "../components/AccountTypePopup";
+import ClientRegisterPopup from "../components/ClientRegisterPopup";
+import PsychologistRegisterPopup from "../components/PsychologistRegisterPopup";
 
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
   const [showAccountTypePopup, setAccountTypePopup] = useState(false);
   const [showClientRegisterPopup, setClientRegisterPopup] = useState(false);
   const [showPsychologistRegisterPopup, setPsychologistRegisterPopup] = useState(false);
   const navigate = useNavigate();
-  const db = getFirestore();
 
-  // Criação do documento do usuário no Firestore
-  const createUserDocument = async (user) => {
-    try {
-      // Cria ou atualiza o documento do usuário na coleção "users"
-      await setDoc(doc(db, "users", user.uid), {
-        email: user.email,
-      }, { merge: true });
-      console.log("Documento do usuário criado/atualizado no Firestore.");
-    } catch (error) {
-      console.error("Erro ao criar documento no Firestore: ", error);
+  const handleSelection = (type) => {
+    if (type === "client") {
+      setClientRegisterPopup(true);
+      setAccountTypePopup(false);
+    } else if (type === "psychologist") {
+      setPsychologistRegisterPopup(true);
+      setAccountTypePopup(false);
     }
   };
 
-  //Send user to the correct form according to their choice
-  const handleSelection = (type) => {
-    if (type == "client"){
-      setClientRegisterPopup(true)
-      setAccountTypePopup(false)
-    }
-    if (type == "psychologist"){
-      setPsychologistRegisterPopup(true)
-      setAccountTypePopup(false)      
-    }
-  }
-
-  // Login com Email e Senha
   const handleEmailLogin = async (e) => {
     e.preventDefault();
+    setLoading(true);
+    setError("");
     try {
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      console.log("Usuário logado com email:", userCredential.user);
-      const user = userCredential.user;
-
-      const psychologistDoc = await getDoc(doc(db, "psychologist", user.uid));
-      if (psychologistDoc.exists()) { // O usuário é um psicólogo
-        console.log("Usuário logado como psicolgo:", userCredential.user);
-        navigate("/Dashboard");
-
-      } else {
-        const userDoc = await getDoc(doc(db, "users", user.uid));
-        if (userDoc.exists()) { // O usuário é um cliente
-          navigate("/Perfil");
-        }
-      }
-      
+      const userCredential = await loginWithEmail(email, password);
+      const role = await checkUserRole(userCredential.user.uid);
+      navigate(role === "psychologist" ? "/Dashboard" : "/Perfil");
     } catch (error) {
-      console.error("Erro ao fazer login com email:", error);
+      setError("Credenciales inválidas. Por favor, intente nuevamente.");
+      console.error("Error de login:", error);
+    } finally {
+      setLoading(false);
     }
   };
 
-  // Login com Google
-  const handleGoogleLogin = async () => {
-    const provider = new GoogleAuthProvider();
+  const handleSocialLogin = async (providerFn) => {
+    setLoading(true);
+    setError("");
     try {
-      const result = await signInWithPopup(auth, provider);
-      console.log("Usuário logado com Google:", result.user);
-
-      // Criar documento no Firestore para o usuário logado
+      const result = await providerFn();
       await createUserDocument(result.user);
-
-      navigate("/Perfil");
+      const role = await checkUserRole(result.user.uid); // Verificar el rol aquí
+      navigate(role === "psychologist" ? "/Dashboard" : "/Perfil");
     } catch (error) {
-      console.error("Erro ao fazer login com Google:", error);
-    }
-  };
-
-  // Login com Microsoft
-  const handleMicrosoftLogin = async () => {
-    const provider = new OAuthProvider("microsoft.com");
-    try {
-      const result = await signInWithPopup(auth, provider);
-      console.log("Usuário logado com Microsoft:", result.user);
-
-      // Criar documento no Firestore para o usuário logado
-      await createUserDocument(result.user);
-
-      navigate("/Perfil");
-    } catch (error) {
-      console.error("Erro ao fazer login com Microsoft:", error);
+      setError("Error en el login social. Intente nuevamente.");
+      console.error("Error de login social:", error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -155,10 +116,10 @@ const Login = () => {
 
         <Grid item xs={12} md={6} lg={4}>
           <Box className="info-section">
-            <Typography variant="h5" component="h2" gutterBottom>
+            <Typography variant="h5" component="h2" gutterBottom sx={{textAlign: 'center'}}>
               Tu Apoyo Psicológico, Paso a Paso
             </Typography>
-            <Typography variant="body1" paragraph>
+            <Typography variant="body1" paragraph style={{textAlign: 'justify'}}>
               Equilibria es una plataforma online que conecta a personas con
               psicólogos cualificados de manera fácil y segura. Ofrecemos
               consultas virtuales adaptadas a tus necesidades, permitiendo elegir
@@ -186,22 +147,27 @@ const Login = () => {
             variant="outlined"
             color="error"
             sx={{ mr: 2 }}
-            onClick={handleGoogleLogin}
+            onClick={() => handleSocialLogin(loginWithGoogle)}
+            disabled={loading}
           >
-            Login con Google
+            {loading ? "Cargando..." : "Login con Google"}
           </Button>
           <Button
             variant="outlined"
             color="primary"
-            onClick={handleMicrosoftLogin}
+            onClick={() => handleSocialLogin(loginWithMicrosoft)}
+            disabled={loading}
           >
-            Login con Microsoft
+            {loading ? "Cargando..." : "Login con Microsoft"}
           </Button>
         </Grid>
       </Grid>
 
       {showAccountTypePopup && (
-        <AccountTypePopup onClose={() => setAccountTypePopup(false)} onSelect={handleSelection}/>
+        <AccountTypePopup 
+          onClose={() => setAccountTypePopup(false)}
+          onSelect={handleSelection}
+        />
       )}
       {showClientRegisterPopup && (
         <ClientRegisterPopup onClose={() => setClientRegisterPopup(false)} />

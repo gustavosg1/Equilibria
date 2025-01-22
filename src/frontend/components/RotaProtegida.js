@@ -1,6 +1,6 @@
 import React from 'react';
 import { Navigate } from 'react-router-dom';
-import { useAuth } from '../../firebase/Authentication';
+import { useAuth } from '../../backend/config/Authentication';
 
 function RotaProtegida({ children }) {
   const { user } = useAuth();
