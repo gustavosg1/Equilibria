@@ -1,42 +1,53 @@
-const io = require('socket.io')(5000);
+const express = require('express');
+const axios = require('axios');
+const cors = require('cors');
 
-console.log('Server Socket.IO running at port 5000');
+const app = express();
+app.use(cors());
+app.use(express.json());
 
-let onlineUsers = [];
+const DEEPSEEK_API_KEY = 'sk-4b67bda8d9ea4063a7c7b1dfa24e6bfa';
 
-io.on('connection', (socket) => {
-  console.log('Um usuário se conectou');
+app.post('/summarize', async (req, res) => {
+  try {
+    const { text } = req.body;
+    console.log('Texto recebido:', text);
 
-  // Quando um usuário se conecta, ele envia seu nome
-  socket.on('user-online', (username) => {
-    if (!onlineUsers.includes(username)) {
-      onlineUsers.push(username); // Adiciona o usuário à lista se ele não estiver já nela
-    }
-    io.emit('online-users', onlineUsers); // Envia a lista atualizada para todos os clientes
-  });
+    const response = await axios.post(
+      'https://api.deepseek.com/chat/completions', // Endpoint corrigido
+      {
+        model: "deepseek-chat", // Adicione o campo `model`
+        messages: [
+          {
+            role: "system",
+            content: "Você é um assistente que resume textos."
+          },
+          {
+            role: "user",
+            content: `Resuma o seguinte texto, em bullet points. No idioma em que está.   : "${text}"`
+          }
+        ],
+        max_tokens: 1000,
+      },
+      {
+        headers: {
+          'Authorization': `Bearer ${DEEPSEEK_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+      }
+    );
 
-  // Quando um usuário se desconecta ou fecha a aba
-  socket.on('user-offline', (username) => {
-    onlineUsers = onlineUsers.filter(user => user !== username); // Remove o usuário da lista
-    io.emit('online-users', onlineUsers); // Envia a lista atualizada para todos os clientes
-  });
+    console.log('Resposta da API da DeepSeek:', response.data);
+    res.json(response.data);
+  } catch (error) {
+    console.error('Erro ao chamar a API da DeepSeek:', error.response ? error.response.data : error.message);
+    res.status(error.response ? error.response.status : 500).json({
+      error: 'Erro ao chamar a API da DeepSeek',
+      details: error.response ? error.response.data : error.message,
+    });
+  }
+});
 
-  socket.on('disconnect', () => {
-    console.log('Um usuário se desconectou');
-  });
-
-  // Receber e encaminhar oferta de chamada
-  socket.on('call-user', (data) => {
-    io.emit('offer', data);
-  });
-
-  // Receber e encaminhar resposta à chamada
-  socket.on('answer-call', (data) => {
-    io.emit('answer', data);
-  });
-
-  // Receber e encaminhar candidatos ICE
-  socket.on('ice-candidate', (data) => {
-    io.emit('ice-candidate', data);
-  });
+app.listen(3001, () => {
+  console.log('Servidor rodando na porta 3001');
 });

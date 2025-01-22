@@ -4,6 +4,7 @@ import Menu from '../components/Menu';
 import Videoconference from '../components/Videoconference';
 import { collection, query, where, getDocs, doc, updateDoc, getDoc } from 'firebase/firestore';
 import { auth, db } from '../firebase/FirebaseConfig';
+import axios from 'axios'; // Adicione o axios para fazer chamadas HTTP
 
 const MisCitas = () => {
   const [tabValue, setTabValue] = useState(0);
@@ -13,42 +14,35 @@ const MisCitas = () => {
   const [currentChannel, setCurrentChannel] = useState(null);
   const [selectedPsychologistId, setSelectedPsychologistId] = useState(null);
   const [selectedAppointmentID, setSelectedAppointmentID] = useState(null);
-  const [isPsychologist, setIsPsychologist] = useState(false); // Determina o tipo de usuário logado
-  const [openModal, setOpenModal] = useState(false); // Controla a exibição do modal
-  const [transcription, setTranscription] = useState(''); // Armazena a transcrição
+  const [isPsychologist, setIsPsychologist] = useState(false);
+  const [openModal, setOpenModal] = useState(false);
+  const [transcription, setTranscription] = useState('');
+  const [isSummarizing, setIsSummarizing] = useState(false);
 
-  // Verifica em qual coleção o usuário está
   useEffect(() => {
     const checkUserCollection = async () => {
       const user = auth.currentUser;
       if (user) {
         const userId = user.uid;
-
-        // Verifica na coleção 'psychologists'
         const psychologistDoc = await getDoc(doc(db, 'psychologist', userId));
         if (psychologistDoc.exists()) {
-          setIsPsychologist(true); // Define que o usuário é um psicólogo
+          setIsPsychologist(true);
           return;
         }
-
-        // Verifica na coleção 'users'
         const userDoc = await getDoc(doc(db, 'users', userId));
         if (userDoc.exists()) {
-          setIsPsychologist(false); // Define que o usuário é um cliente
+          setIsPsychologist(false);
           return;
         }
-
         console.error('Usuário não encontrado em nenhuma coleção.');
       }
     };
-
     checkUserCollection();
   }, []);
 
   const AppointmentCard = ({ appointment, onCancel }) => {
-    const [otherUserInfo, setOtherUserInfo] = useState(null); // Armazena informações do outro usuário
+    const [otherUserInfo, setOtherUserInfo] = useState(null);
 
-    // Busca informações do outro usuário (cliente ou psicólogo)
     useEffect(() => {
       const fetchOtherUserInfo = async () => {
         const otherUserId = isPsychologist ? appointment.clientId : appointment.psychologistId;
@@ -60,25 +54,48 @@ const MisCitas = () => {
           }
         }
       };
-
       fetchOtherUserInfo();
     }, [appointment, isPsychologist]);
 
     const handleTranscription = async () => {
-      setOpenModal(true); // Abre o modal
+      console.log('Clicou no ícone de transcrição');
       try {
+        setIsSummarizing(true);
+        console.log('Buscando transcrição no Firestore...');
         const appointmentDoc = await getDoc(doc(db, 'appointments', appointment.id));
         if (appointmentDoc.exists() && appointmentDoc.data().transcription) {
-          setTranscription(appointmentDoc.data().transcription);
+          const transcriptionText = appointmentDoc.data().transcription;
+          console.log('Transcrição encontrada:', transcriptionText);
+    
+          console.log('Chamando a API da DeepSeek...');
+          const response = await axios.post(
+            'http://localhost:3001/summarize',
+            {
+              text: transcriptionText,
+            },
+            {
+              headers: {
+                'Content-Type': 'application/json',
+              },
+            }
+          );
+    
+          const resumo = response.data.choices[0].message.content; // Extrai o resumo
+          console.log('Resumo gerado:', resumo);
+          setTranscription(resumo);
         } else {
+          console.log('Nenhuma transcrição encontrada para esta cita');
           setTranscription('No hay resumen para esta cita');
         }
       } catch (error) {
         console.error('Erro ao buscar transcrição:', error);
         setTranscription('Erro ao buscar transcrição');
+      } finally {
+        setIsSummarizing(false);
+        setOpenModal(true);
       }
     };
-
+    
     return (
       <Card sx={{ display: 'flex', mb: 2, boxShadow: 3 }}>
         <CardMedia
@@ -94,7 +111,6 @@ const MisCitas = () => {
           <Typography variant="body1"><strong>Fecha:</strong> {appointment.day}</Typography>
           <Typography variant="body1" sx={{ mb: 2 }}><strong>Hora:</strong> {appointment.time}</Typography>
 
-          {/* Renderizar os botões apenas se active === true */}
           {appointment.active && (
             <Box sx={{ display: 'flex', gap: 2 }}>
               <Button
@@ -118,7 +134,6 @@ const MisCitas = () => {
               </Button>
             </Box>
           )}
-          {/* Ícone para transcrição */}
           {!appointment.active && (
             <Box
               sx={{
@@ -160,12 +175,10 @@ const MisCitas = () => {
           getDocs(clientQuery),
           getDocs(psychologistQuery),
         ]);
-
         const fetchedAppointments = [
           ...clientSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })),
           ...psychologistSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })),
         ];
-
         setAppointments(fetchedAppointments);
       } catch (error) {
         console.error(error);
@@ -173,7 +186,6 @@ const MisCitas = () => {
         setLoading(false);
       }
     };
-
     fetchAppointments();
   }, []);
 
@@ -201,10 +213,8 @@ const MisCitas = () => {
                 <Grid item xs={12} key={appointment.id}>
                   <AppointmentCard appointment={appointment} onCancel={async (id) => {
                     try {
-                      await updateDoc(doc(db, 'appointments', id), { active: false }); // Atualiza no Firestore
-                      setAppointments(prev =>
-                        prev.map(a => (a.id === id ? { ...a, active: false } : a))
-                      );
+                      await updateDoc(doc(db, 'appointments', id), { active: false });
+                      setAppointments(prev => prev.map(a => (a.id === id ? { ...a, active: false } : a)));
                     } catch (error) {
                       console.error('Erro ao cancelar consulta:', error);
                     }
@@ -215,7 +225,6 @@ const MisCitas = () => {
           )}
         </Container>
       )}
-      {/* Modal */}
       <Modal open={openModal} onClose={() => setOpenModal(false)}>
         <Box
           sx={{
@@ -230,7 +239,11 @@ const MisCitas = () => {
           }}
         >
           <Typography variant="h6">Transcripción</Typography>
-          <Typography>{transcription}</Typography>
+          {isSummarizing ? (
+            <Typography>Cargando resumen...</Typography>
+          ) : (
+            <Typography>{transcription}</Typography>
+          )}
           <Button onClick={() => setOpenModal(false)} variant="contained" sx={{ mt: 2 }}>
             Cerrar
           </Button>
