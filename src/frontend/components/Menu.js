@@ -1,95 +1,120 @@
-import React, {useState, useEffect} from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { signOut } from 'firebase/auth';
 import { auth, db } from '../../backend/config/FirebaseConfig';
-import { AppBar, Toolbar, IconButton, Button, Box } from '@mui/material';
-import { styled } from '@mui/system';
-import {doc, getDoc} from 'firebase/firestore'
+import { AppBar, Toolbar, IconButton, Button, Box, Typography, styled } from '@mui/material';
+import { doc, getDoc } from 'firebase/firestore';
+import { FaHome, FaUserMd, FaCalendarAlt, FaSignOutAlt } from 'react-icons/fa';
 
-// Estilização do AppBar
-const StyledAppBar = styled(AppBar)({
-  backgroundColor: '#103900',
-  color: '#ffffff',
-  boxShadow: 'none',
-});
+// Estilización del AppBar
+const StyledAppBar = styled(AppBar)(({ theme }) => ({
+  backgroundColor: theme.palette.success.dark,
+  color: theme.palette.common.white,
+  boxShadow: theme.shadows[3],
+  padding: theme.spacing(1, 0),
+}));
 
-// Estilização dos Links
-const StyledLink = styled(Link)({
+// Estilización de los Links
+const StyledLink = styled(Link)(({ theme }) => ({
   textDecoration: 'none',
-  color: '#ffffff',
+  color: theme.palette.common.white,
   display: 'flex',
   alignItems: 'center',
-  marginRight: '20px',
+  marginRight: theme.spacing(3),
+  transition: 'all 0.3s ease',
   '&:hover': {
-    color: '#1e90ff',
+    color: theme.palette.success.light,
+    transform: 'translateY(-2px)',
   },
-});
+}));
+
+// Estilización del Botón de Salir
+const StyledButton = styled(Button)(({ theme }) => ({
+  color: theme.palette.common.white,
+  textTransform: 'none',
+  fontSize: '1rem',
+  fontWeight: 500,
+  transition: 'all 0.3s ease',
+  '&:hover': {
+    backgroundColor: theme.palette.success.light,
+    color: theme.palette.common.white,
+    transform: 'translateY(-2px)',
+  },
+}));
 
 function Menu() {
   const [userRole, setUserRole] = useState(null);
   const navigate = useNavigate();
 
-  useEffect(() =>{
+  useEffect(() => {
     const checkUserRole = async () => {
-      try{
+      try {
         const user = auth.currentUser;
-        if (user){
-          const psicolegDoc = doc(db,'psychologist', user.uid);
+        if (user) {
+          const psicolegDoc = doc(db, 'psychologist', user.uid);
           const userSnapshot = await getDoc(psicolegDoc);
           setUserRole(userSnapshot.exists() ? 'psychologist' : 'client');
         }
-      } catch (error){
-        console.log('Error al accedir la base de dades per trobar perfil')
+      } catch (error) {
+        console.error('Error al acceder a la base de datos:', error);
       }
-    }
+    };
 
-    checkUserRole()
+    checkUserRole();
   }, []);
-  
 
-  // Função de logout
-  async function HandleLogout() {
+  // Función de logout
+  const handleLogout = async () => {
     try {
       await signOut(auth);
       navigate('/');
     } catch (error) {
-      console.error('Erro ao fazer logout:', error);
+      console.error('Error al hacer logout:', error);
     }
-  }
+  };
 
   const pagina = userRole === 'psychologist' ? '/Dashboard' : '/Perfil';
-
-   
 
   return (
     <StyledAppBar position="static">
       <Toolbar>
-        {/* Logo à esquerda */}
+        {/* Logo a la izquierda */}
         <IconButton edge="start" color="inherit" aria-label="menu" sx={{ mr: 2 }}>
-          <img src="/images/Logo.png" alt="Logo" style={{ height: '50px', width: '50px' }} />
+          <img 
+            src="/images/Logo.png" 
+            alt="Logo" 
+            style={{ height: '50px', width: '50px', borderRadius: '50%' }} 
+          />
         </IconButton>
 
-        {/* Itens do menu alinhados à direita */}
-        <Box sx={{ display: "flex", marginLeft: "auto", alignItems: "center", gap: 2 }}>
+        {/* Título de la aplicación */}
+        <Typography variant="h6" sx={{ flexGrow: 1, fontWeight: 700 }}>
+          Equilibria
+        </Typography>
+
+        {/* Itens del menu alineados a la derecha */}
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 3 }}>
           <StyledLink to={pagina}>
-            <img src="/images/icono-home.png" alt="Home" style={{ width: '55px', height: '40px', marginRight: '5px' }} />
-            Home
+            <FaHome size={24} style={{ marginRight: '8px' }} />
+            <Typography variant="body1">Home</Typography>
           </StyledLink>
+
           <StyledLink to="/Especialistas">
-            <img src="/images/icono-especialistas.png" alt="Especialistas" style={{ width: '60px', height: '45px', marginRight: '5px' }} />
-            Especialistas
+            <FaUserMd size={24} style={{ marginRight: '8px' }} />
+            <Typography variant="body1">Especialistas</Typography>
           </StyledLink>
+
           <StyledLink to="/MisCitas">
-            <img src="/images/icono-mis-citas.png" alt="Mis Citas" style={{ width: '35px', height: '35  px', marginRight: '5px' }} />
-            Mis Citas
+            <FaCalendarAlt size={24} style={{ marginRight: '8px' }} />
+            <Typography variant="body1">Mis Citas</Typography>
           </StyledLink>
-          <StyledLink to="#">
-            <img src="/images/icono-chat.png" alt="Chat" style={{ width: '45px', height: '40px', marginRight: '5px' }} />
-            Chat
-          </StyledLink>
-          <Button color="inherit" onClick={HandleLogout}>
+
+          <StyledButton 
+            onClick={handleLogout} 
+            startIcon={<FaSignOutAlt size={18} />}
+          >
             Salir
-          </Button>
+          </StyledButton>
         </Box>
       </Toolbar>
     </StyledAppBar>

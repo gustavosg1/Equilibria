@@ -218,6 +218,7 @@ function Especialistas() {
                   { value: 100, label: '€100' },
                   { value: 200, label: '€200' },
                 ]}
+                sx={{color: 'green'}}
               />
               <Typography>
                 Intervalo selecionado: €{priceRange[0]} - €{priceRange[1]}

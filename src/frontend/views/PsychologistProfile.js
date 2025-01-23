@@ -1,7 +1,30 @@
 import React, { useEffect, useState } from 'react';
-import { Box, Typography, Button, Paper, Chip, CircularProgress } from '@mui/material';
+import { Box, Typography, Button, Paper, Chip, CircularProgress, Avatar, Divider, styled } from '@mui/material';
 import { useAuth } from "../../backend/config/Authentication";
 import { getPsychologistProfile } from '../../backend/services/psychologistService';
+import { FaEdit } from 'react-icons/fa';
+
+const ProfileSection = styled(Box)(({ theme }) => ({
+  marginBottom: theme.spacing(4),
+  padding: theme.spacing(2),
+  borderRadius: theme.shape.borderRadius,
+  background: theme.palette.background.paper,
+  boxShadow: theme.shadows[1],
+  '&:hover': {
+    boxShadow: theme.shadows[3]
+  }
+}));
+
+const StyledChip = styled(Chip)(({ theme }) => ({
+  margin: theme.spacing(0.5),
+  fontSize: '14px',
+  padding: '4px 8px',
+  backgroundColor: theme.palette.grey[300], // Chip cinza
+  color: theme.palette.text.primary, // Cor do texto
+  '&:hover': {
+    backgroundColor: theme.palette.grey[400], // Cinza mais escuro no hover
+  }
+}));
 
 function PsychologistProfile({ onSelect }) {
   const { user } = useAuth();
@@ -14,7 +37,6 @@ function PsychologistProfile({ onSelect }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  // Busca os dados do perfil
   useEffect(() => {
     const loadProfile = async () => {
       try {
@@ -30,39 +52,6 @@ function PsychologistProfile({ onSelect }) {
     };
     loadProfile();
   }, [user]);
-
-  // Componente auxiliar para renderizar seções
-  const ProfileSection = ({ title, items, emptyMessage }) => (
-    <Box mb={4}>
-      <Typography variant="h6" sx={{ ml: 1, fontWeight: 'bold' }}>{title}</Typography>
-      <Box
-        sx={{
-          p: 2,
-          border: '1px solid #ccc',
-          borderRadius: 2,
-          bgcolor: '#FAFFF9',
-          display: 'flex',
-          flexWrap: 'wrap',
-          gap: 1,
-          mt: 1
-        }}
-      >
-        {items.length > 0 ? (
-          items.map((item, index) => (
-            <Chip
-              key={index}
-              label={item}
-              sx={{ fontSize: '14px', p: '4px 8px' }}
-            />
-          ))
-        ) : (
-          <Typography variant="body2" color="textSecondary">
-            {emptyMessage}
-          </Typography>
-        )}
-      </Box>
-    </Box>
-  );
 
   if (loading) {
     return (
@@ -81,54 +70,121 @@ function PsychologistProfile({ onSelect }) {
   }
 
   return (
-    <Box>
-      <Paper elevation={3} sx={{ p: 3, width: "100%" }}>
-        {/* Botão de edição */}
-        <Box textAlign="right">
+    <Box sx={{ p: 3 }}>
+      <Paper elevation={0} sx={{ 
+        p: 4,
+        borderRadius: 4,
+        background: 'linear-gradient(145deg, #ffffff 0%, #f8fafc 100%)',
+        boxShadow: '0px 8px 24px rgba(149, 157, 165, 0.1)'
+      }}>
+        {/* Header Section */}
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
+          <Typography variant="h4" sx={{ 
+            fontWeight: 700,
+            background: 'linear-gradient(45deg, #2e7d32 30%, #388e3c 90%)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent'
+          }}>
+            Mi Perfil
+          </Typography>
           <Button 
             variant="contained" 
             onClick={() => onSelect("editarPerfil")}
+            startIcon={<FaEdit />}
             sx={{ 
-              bgcolor: 'green', 
-              '&:hover': { bgcolor: 'darkgreen' } 
+              bgcolor: 'success.main',
+              '&:hover': { bgcolor: 'success.dark' },
+              borderRadius: '12px',
+              textTransform: 'none',
+              fontSize: '1rem',
+              px: 3,
+              py: 1
             }}
           >
             Editar Perfil
           </Button>
         </Box>
 
-        {/* Título da página */}
-        <Typography variant="h5" textAlign="center" fontWeight="bold" mb={4}>
-          Mi Perfil
-        </Typography>
+        <Divider sx={{ mb: 4 }} />
 
-        {/* Seção de Descrição */}
-        <ProfileSection 
-          title="Mi Descripción" 
-          items={profileData.description} 
-          emptyMessage="Todavía no tienes una descripción" 
-        />
+        {/* Description Section */}
+        <ProfileSection>
+          <Typography variant="h6" sx={{ mb: 2, fontWeight: 600, color: 'success.main' }}>
+            Mi Descripción
+          </Typography>
+          {profileData.description.length > 0 ? (
+            <Typography variant="body1" sx={{ lineHeight: 1.6 }}>
+              {profileData.description.join(' ')}
+            </Typography>
+          ) : (
+            <Typography variant="body2" color="textSecondary">
+              Todavía no tienes una descripción
+            </Typography>
+          )}
+        </ProfileSection>
 
-        {/* Seção de Estudos */}
-        <ProfileSection 
-          title="Mis Estudios" 
-          items={profileData.studies.map(s => `${s.course}: ${s.school}`)} 
-          emptyMessage="Todavía no tienes informaciones de estudios" 
-        />
+        {/* Studies Section */}
+        <ProfileSection>
+          <Typography variant="h6" sx={{ mb: 2, fontWeight: 600, color: 'success.main' }}>
+            Mis Estudios
+          </Typography>
+          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+            {profileData.studies.length > 0 ? (
+              profileData.studies.map((study, index) => (
+                <StyledChip
+                  key={index}
+                  label={`${study.course}: ${study.school}`}
+                />
+              ))
+            ) : (
+              <Typography variant="body2" color="textSecondary">
+                Todavía no tienes informaciones de estudios
+              </Typography>
+            )}
+          </Box>
+        </ProfileSection>
 
-        {/* Seção de Idiomas */}
-        <ProfileSection 
-          title="Mis Idiomas" 
-          items={profileData.languages} 
-          emptyMessage="Todavía no tienes informaciones de idiomas que hablas" 
-        />
+        {/* Languages Section */}
+        <ProfileSection>
+          <Typography variant="h6" sx={{ mb: 2, fontWeight: 600, color: 'success.main' }}>
+            Mis Idiomas
+          </Typography>
+          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+            {profileData.languages.length > 0 ? (
+              profileData.languages.map((language, index) => (
+                <StyledChip
+                  key={index}
+                  label={language}
+                />
+              ))
+            ) : (
+              <Typography variant="body2" color="textSecondary">
+                Todavía no tienes informaciones de idiomas que hablas
+              </Typography>
+            )}
+          </Box>
+        </ProfileSection>
 
-        {/* Seção de Especialidades */}
-        <ProfileSection 
-          title="Especialidades" 
-          items={profileData.specialties} 
-          emptyMessage="Todavía no tienes informaciones de sus especialidades" 
-        />
+        {/* Specialties Section */}
+        <ProfileSection>
+          <Typography variant="h6" sx={{ mb: 2, fontWeight: 600, color: 'success.main' }}>
+            Especialidades
+          </Typography>
+          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+            {profileData.specialties.length > 0 ? (
+              profileData.specialties.map((specialty, index) => (
+                <StyledChip
+                  key={index}
+                  label={specialty}
+                />
+              ))
+            ) : (
+              <Typography variant="body2" color="textSecondary">
+                Todavía no tienes informaciones de sus especialidades
+              </Typography>
+            )}
+          </Box>
+        </ProfileSection>
       </Paper>
     </Box>
   );

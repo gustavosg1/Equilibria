@@ -1,102 +1,147 @@
 import React, { useState, useEffect } from 'react';
-import { Box, Typography, Grid, Paper } from '@mui/material';
+import { Box, Typography, Grid, Paper, Rating, CircularProgress, styled } from '@mui/material';
 import { getFirestore, doc, getDoc } from 'firebase/firestore';
 import { useAuth } from '../../backend/config/Authentication';
 
+const FeedbackCard = styled(Paper)(({ theme }) => ({
+  padding: theme.spacing(3),
+  borderRadius: theme.shape.borderRadius * 2,
+  background: 'linear-gradient(145deg, #ffffff 0%, #f8fafc 100%)',
+  boxShadow: theme.shadows[2],
+  transition: 'all 0.3s ease',
+  minHeight: 140,
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  '&:hover': {
+    transform: 'translateY(-5px)',
+    boxShadow: theme.shadows[4]
+  }
+}));
+
 function FeedbackPsychologist() {
-  const [averageRate, setAverageRate] = useState(0); // Stores the average rating
-  const [reviewCount, setReviewCount] = useState(0); // Stores the total number of reviews
-  const [comments, setComments] = useState([]); // Stores the feedback comments
+  const [averageRate, setAverageRate] = useState(0);
+  const [reviewCount, setReviewCount] = useState(0);
+  const [comments, setComments] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const db = getFirestore();
-  const { user } = useAuth(); // Get authenticated user
+  const { user } = useAuth();
 
   useEffect(() => {
-    // Fetch feedback data from Firestore using the authenticated user's ID
     const fetchFeedback = async () => {
-      if (user && user.uid) {
-        try {
-          const feedbackDoc = await getDoc(doc(db, 'reviews', user.uid)); // Use the authenticated user's ID
+      try {
+        setLoading(true);
+        if (user?.uid) {
+          const feedbackDoc = await getDoc(doc(db, 'reviews', user.uid));
           if (feedbackDoc.exists()) {
-            const feedbackData = feedbackDoc.data().reviews || []; // Extract reviews array
-            const totalRate = feedbackData.reduce((sum, review) => sum + review.rate, 0); // Sum all ratings
-            setAverageRate(feedbackData.length > 0 ? totalRate / feedbackData.length : 0); // Calculate average rating
-            setReviewCount(feedbackData.length); // Update total reviews count
-            setComments(feedbackData.map(review => review.comment)); // Extract comments from feedback
+            const feedbackData = feedbackDoc.data().reviews || [];
+            const totalRate = feedbackData.reduce((sum, review) => sum + review.rate, 0);
+            setAverageRate(feedbackData.length > 0 ? totalRate / feedbackData.length : 0);
+            setReviewCount(feedbackData.length);
+            setComments(feedbackData.map(review => review.comment));
           }
-        } catch (error) {
-          console.error('Error fetching feedback:', error);
         }
+      } catch (error) {
+        setError('Error al cargar las reseñas');
+        console.error('Error fetching feedback:', error);
+      } finally {
+        setLoading(false);
       }
     };
 
     fetchFeedback();
-  }, [db, user]); // Dependencies include Firestore instance and authenticated user
+  }, [db, user]);
+
+  if (loading) {
+    return (
+      <Box display="flex" justifyContent="center" mt={4}>
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  if (error) {
+    return (
+      <Typography color="error" textAlign="center" mt={4}>
+        {error}
+      </Typography>
+    );
+  }
 
   return (
-    <Grid
-      sx={{        
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'flex-start',
-        paddingTop: '30px',
-        borderRadius: 2,
-        boxShadow: 3,
-        width: '100%',
-        height: '120%',
-        overflowY: 'auto',
+    <Box sx={{
+      p: 4,
+      minHeight: '100vh',
+      background: 'linear-gradient(145deg, #f8fafc 0%, #ffffff 100%)'
+    }}>
+      <Paper elevation={0} sx={{
+        p: 4,
+        borderRadius: 4,
+        boxShadow: '0px 8px 24px rgba(149, 157, 165, 0.1)'
+      }}>
+        {/* Header Section */}
+        <Box textAlign="center" mb={4}>
+          <Typography variant="h4" sx={{
+            fontWeight: 700,
+            background: 'linear-gradient(45deg, #2e7d32 30%, #388e3c 90%)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            mb: 1
+          }}>
+            Mis Reseñas
+          </Typography>
+          
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 2 }}>
+            <Rating
+              value={averageRate}
+              precision={0.1}
+              readOnly
+              sx={{ fontSize: '2.5rem', color: '#ffc107' }}
+            />
+            <Typography variant="h6" color="text.secondary">
+              ({averageRate.toFixed(1)}/5.0)
+            </Typography>
+          </Box>
+          
+          <Typography variant="body1" color="success.main" sx={{ mt: 1 }}>
+            {reviewCount} {reviewCount === 1 ? 'evaluación' : 'evaluaciones'}
+          </Typography>
+        </Box>
 
-      }}
-    >
-      {/* Average rating displayed at the top */}
-      <Typography variant="caption" sx={{ mb: 1, color: 'gray' }}>
-        Média: {averageRate.toFixed(1)}
-      </Typography>
+        {/* Comments Grid */}
+        <Grid container spacing={3} sx={{ mt: 2 }}>
+          {comments.map((comment, index) => (
+            <Grid item xs={12} sm={6} md={4} key={index}>
+              <FeedbackCard elevation={0}>
+                <Typography variant="body1" sx={{
+                  fontStyle: 'italic',
+                  textAlign: 'center',
+                  color: 'text.secondary',
+                  position: 'relative',
+                  '&:before, &:after': {
+                    content: '"\\201C"',
+                    fontSize: '2rem',
+                    color: 'success.light',
+                    position: 'absolute',
+                  },
+                  '&:before': { left: -10, top: -10 },
+                  '&:after': { right: -10, bottom: -10 }
+                }}>
+                  {comment}
+                </Typography>
+              </FeedbackCard>
+            </Grid>
+          ))}
+        </Grid>
 
-      {/* Star ratings based on average */}
-      <Box sx={{ display: 'flex', justifyContent: 'center', mb: 1 }}>
-        {[...Array(5)].map((_, index) => (
-          <Box
-            key={index}
-            sx={{
-              width: 40,
-              height: 40,
-              backgroundColor: index < Math.round(averageRate) ? '#ffc107' : '#e0e0e0',
-              clipPath: 'polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%)',
-              mr: 0.5,
-            }}
-          />
-        ))}
-      </Box>
-
-      {/* Total number of reviews */}
-      <Typography variant="body2" sx={{ color: 'gray', mb: 3 }}>
-        {reviewCount} {reviewCount === 1 ? 'review' : 'reviews'}
-      </Typography>
-
-      {/* Feedback comments */}
-      <Grid container spacing={2} sx={{ width: '90%' }}>
-        {comments.map((comment, index) => (
-          <Grid item xs={12} sm={6} md={4} key={index}>
-            <Paper
-              elevation={3} 
-              sx={{
-                p: 2,
-                textAlign: 'center',
-                backgroundColor: '#fff',
-                borderRadius: 1,
-                boxShadow: '0px 4px 10px rgba(7, 183, 30, 0.63)',
-                minHeight: 100,
-              }}
-            >
-              <Typography variant="body2" color="textSecondary" sx={{ fontStyle: 'italic' }}>
-                "{comment}"
-              </Typography>
-            </Paper>
-          </Grid>
-        ))}
-      </Grid>
-    </Grid>
+        {comments.length === 0 && (
+          <Typography variant="body1" textAlign="center" sx={{ mt: 4, color: 'text.secondary' }}>
+            Aún no tienes evaluaciones
+          </Typography>
+        )}
+      </Paper>
+    </Box>
   );
 }
 

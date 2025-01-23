@@ -104,7 +104,7 @@ export const updatePsychologistProfile = async (userId, userData, photoFile) => 
       photoURL 
     }, { merge: true });
 
-    return true;
+    return photoURL; // Retorna a nova URL
   } catch (error) {
     throw new Error(`Erro ao atualizar perfil: ${error.message}`);
   }

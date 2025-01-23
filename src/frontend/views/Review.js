@@ -11,8 +11,33 @@ import {
   Modal,
   Grid,
   Paper,
-  CircularProgress, Container
+  CircularProgress,
+  Container,
+  styled
 } from '@mui/material';
+
+const StyledPaper = styled(Paper)(({ theme }) => ({
+  padding: theme.spacing(4),
+  borderRadius: theme.shape.borderRadius * 2,
+  background: 'linear-gradient(145deg, #ffffff 0%, #f8fafc 100%)',
+  boxShadow: theme.shadows[4],
+  maxWidth: 800,
+  margin: 'auto',
+  position: 'relative'
+}));
+
+const StyledButton = styled(Button)(({ theme }) => ({
+  borderRadius: '12px',
+  padding: theme.spacing(1.5),
+  minWidth: 200,
+  fontSize: '1rem',
+  fontWeight: 500,
+  transition: 'all 0.3s ease',
+  '&:hover': {
+    transform: 'translateY(-2px)',
+    boxShadow: theme.shadows[3]
+  }
+}));
 
 const Review = ({ psychologistId }) => {
   const [rate, setRate] = useState(0);
@@ -55,38 +80,31 @@ const Review = ({ psychologistId }) => {
         bgcolor: 'background.paper',
         boxShadow: 24,
         p: 4,
+        borderRadius: 3,
         textAlign: 'center',
         minWidth: 300
       }}>
-        <Typography variant="h6" gutterBottom>Sucesso!</Typography>
-        <Typography>Avaliação enviada com sucesso!</Typography>
-        <Button
+        <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
+          ¡Gracias por tu Evaluación!
+        </Typography>
+        <Typography variant="body1" sx={{ mb: 3 }}>
+          Tu opinión es muy importante para nosotros.
+        </Typography>
+        <StyledButton
           onClick={() => {
             setShowModal(false);
             navigate('/Perfil');
           }}
           variant="contained"
-          sx={{ mt: 2, bgcolor: 'green', '&:hover': { bgcolor: 'darkgreen' } }}
+          sx={{ 
+            bgcolor: 'success.main',
+            '&:hover': { bgcolor: 'success.dark' }
+          }}
         >
           OK
-        </Button>
+        </StyledButton>
       </Box>
     </Modal>
-  );
-
-  const ActionButton = ({ onClick, text }) => (
-    <Button
-      variant="contained"
-      onClick={onClick}
-      disabled={loading}
-      sx={{
-        bgcolor: 'green',
-        '&:hover': { bgcolor: 'darkgreen' },
-        minWidth: 200
-      }}
-    >
-      {loading ? <CircularProgress size={24} color="inherit" /> : text}
-    </Button>
   );
 
   return (
@@ -102,15 +120,15 @@ const Review = ({ psychologistId }) => {
     >
       <Grid container justifyContent="center">
         <Grid item xs={12} md={8} lg={6}>
-          <Paper elevation={3} sx={{ 
-            p: 4,
-            width: '100%',
-            maxWidth: 800,
-            mx: 'auto',
-            position: 'relative'
-          }}>
-            <Typography variant="h4" align="center" gutterBottom sx={{ mb: 3 }}>
-              Como Fue tu Cita?
+          <StyledPaper elevation={0}>
+            <Typography variant="h4" align="center" gutterBottom sx={{ 
+              fontWeight: 700,
+              mb: 3,
+              background: 'linear-gradient(45deg, #2e7d32 30%, #388e3c 90%)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent'
+            }}>
+              ¿Cómo fue tu cita?
             </Typography>
 
             {error && (
@@ -130,7 +148,7 @@ const Review = ({ psychologistId }) => {
                 value={rate}
                 onChange={(_, newValue) => setRate(newValue)}
                 size="large"
-                sx={{ fontSize: '2.5rem' }}
+                sx={{ fontSize: '3rem', color: 'success.main' }}
               />
 
               <TextField
@@ -141,6 +159,11 @@ const Review = ({ psychologistId }) => {
                 onChange={(e) => setComment(e.target.value)}
                 fullWidth
                 variant="outlined"
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    borderRadius: '12px'
+                  }
+                }}
               />
 
               <Box sx={{ 
@@ -151,37 +174,37 @@ const Review = ({ psychologistId }) => {
                 width: '100%',
                 mt: 2
               }}>
-                <Button
+                <StyledButton
                   onClick={handleSubmit}
                   variant="contained"
                   disabled={loading}
-                  sx={{
-                    bgcolor: 'green',
-                    minWidth: 200,
-                    py: 1.5,
-                    '&:hover': { bgcolor: 'darkgreen' }
+                  sx={{ 
+                    bgcolor: 'success.main',
+                    '&:hover': { bgcolor: 'success.dark' }
                   }}
                 >
                   {loading ? <CircularProgress size={24} /> : 'Enviar Evaluación'}
-                </Button>
+                </StyledButton>
 
-                <Button
+                <StyledButton
                   onClick={() => navigate('/Perfil')}
                   variant="outlined"
-                  sx={{
-                    borderColor: 'green',
-                    color: 'green',
-                    minWidth: 200,
-                    py: 1.5
+                  sx={{ 
+                    borderColor: 'success.main',
+                    color: 'success.main',
+                    '&:hover': { 
+                      borderColor: 'success.dark',
+                      color: 'success.dark'
+                    }
                   }}
                 >
                   No Quiero Evaluar
-                </Button>
+                </StyledButton>
               </Box>
             </Box>
 
             <SuccessModal />
-          </Paper>
+          </StyledPaper>
         </Grid>
       </Grid>
     </Container>

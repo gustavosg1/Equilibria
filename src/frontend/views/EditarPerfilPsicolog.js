@@ -21,7 +21,7 @@ import {
   fetchAuxiliaryData,
 } from '../../backend/services/psychologistService';
 
-function EditarPerfilPsicolog({ onPhotoUpdate }) {
+function EditarPerfilPsicolog({ onPhotoUpdate, onNameUpdate }) {
   const [name, setNome] = useState('');
   const [birthDate, setDataNascimento] = useState('');
   const [photo, setPhoto] = useState(null);
@@ -38,6 +38,7 @@ function EditarPerfilPsicolog({ onPhotoUpdate }) {
   const [languages, setLanguages] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [nextId, setNextId] = useState(1);
+  
 
   const auth = getAuth();
   const userId = auth.currentUser?.uid; // Obtém o userId do usuário autenticado
@@ -68,7 +69,7 @@ function EditarPerfilPsicolog({ onPhotoUpdate }) {
       const userData = {
         name,
         birthDate,
-        photoURL: photo instanceof File ? null : photo, // Se for um arquivo, o URL será gerado no service
+        photoURL: photo instanceof File ? null : photo,
         description,
         studies: studiesList,
         visible,
@@ -78,11 +79,16 @@ function EditarPerfilPsicolog({ onPhotoUpdate }) {
         availability,
       };
 
-      await updatePsychologistProfile(userId, userData, photo); // Passa o userId aqui
+      const newPhotoURL = await updatePsychologistProfile(userId, userData, photo); 
+      if (photo instanceof File) {
+        setPhoto(newPhotoURL); // Atualiza o estado LOCAL
+        if (onPhotoUpdate) onPhotoUpdate(newPhotoURL); // Passa a URL para o componente PAI
+      }
+      
       setShowModal(true);
-      if (onPhotoUpdate) onPhotoUpdate();
+      if (onNameUpdate) onNameUpdate(); // Notifica o componente pai para atualizar o nome
     } catch (error) {
-      console.error('Erro ao atualizar o perfil do usuário: ', error);
+      console.error('Error al atualizar el perfil del usuário: ', error);
     }
   };
 
@@ -145,33 +151,51 @@ function EditarPerfilPsicolog({ onPhotoUpdate }) {
             borderRadius: 2,
             boxShadow: 2,
             backgroundColor: 'white',
-            width: '115%',
+            width: '100%',
           }}
         >
-          <Typography variant="h4" align="center" gutterBottom>
-            Editar Perfil
-          </Typography>
+          <Typography variant="h4" sx={{ 
+                      fontWeight: 700,
+                      background: 'linear-gradient(45deg, #2e7d32 30%, #388e3c 90%)',
+                      WebkitBackgroundClip: 'text',
+                      WebkitTextFillColor: 'transparent'
+                    }}>
+                      Editar Perfil
+                    </Typography>
 
           <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-            <p style={{ paddingTop: '5px' }}> Perfil visible para clientes: {visible ? 'SÍ' : 'NO'}</p>
+            <p style={{ paddingTop: '5px'}}> Perfil visible para clientes: {visible ? 'SÍ' : 'NO'}</p>
             <Switch
               checked={visible}
               onChange={(event) => setVisible(event.target.checked)}
               inputProps={{ 'aria-label': 'controlled' }}
-              sx={{ textAlign: 'right' }}
+              sx={{
+                '& .MuiSwitch-thumb': {
+                  color: visible ? 'green' : 'grey', // Cor do botão (thumb)
+                },
+                '& .MuiSwitch-track': {
+                  backgroundColor: visible ? 'lightgreen' : 'grey', // Cor da trilha
+                },
+                '& .Mui-checked': {
+                  color: 'green', // Cor quando selecionado
+                },
+                '& .Mui-checked + .MuiSwitch-track': {
+                  backgroundColor: 'lightgreen', // Cor da trilha quando selecionado
+                },
+              }}
             />
           </Box>
 
           <FormControl fullWidth sx={{ mb: 2 }}>
             <TextField
-              label="Nome"
+              label="Nombre"
               variant="outlined"
               value={name}
               onChange={(e) => setNome(e.target.value)}
               margin="normal"
             />
             <TextField
-              label="Data de Nascimento"
+              label="Fecha de Nacimiento"
               type="date"
               InputLabelProps={{ shrink: true }}
               variant="outlined"
@@ -341,7 +365,7 @@ function EditarPerfilPsicolog({ onPhotoUpdate }) {
                     });
                   }}
                 >
-                  Deletar
+                  Borrar
                 </Button>
               </FormControl>
             ))}
@@ -351,8 +375,8 @@ function EditarPerfilPsicolog({ onPhotoUpdate }) {
           <br></br>
 
           <Box textAlign="center" mb={2}>
-            <Button variant="contained" component="label">
-              Escolher Foto
+            <Button variant="contained" component="label" sx={{bgcolor:'green', '&:hover': {bgcolor: 'darkgreen'} }}>
+              SUBIR FOTO
               <input type="file" hidden onChange={handleFotoChange} />
             </Button>
             {photo && (
@@ -367,7 +391,7 @@ function EditarPerfilPsicolog({ onPhotoUpdate }) {
 
           {studiesList.map((study) => (
             <Box key={study.id} sx={{ border: '1px solid gray', borderRadius: 2, p: 2, mb: 2 }}>
-              <Typography variant="h6">Estudo #{study.id}</Typography>
+              <Typography variant="h6">Estudio #{study.id}</Typography>
               <TextField
                 fullWidth
                 label="Curso"
@@ -377,7 +401,7 @@ function EditarPerfilPsicolog({ onPhotoUpdate }) {
               />
               <TextField
                 fullWidth
-                label="Data de Início"
+                label="Fecha de Inicio"
                 type="date"
                 InputLabelProps={{ shrink: true }}
                 value={study.startDate}
@@ -386,7 +410,7 @@ function EditarPerfilPsicolog({ onPhotoUpdate }) {
               />
               <TextField
                 fullWidth
-                label="Data de Conclusão"
+                label="Fecha de Finalización"
                 type="date"
                 InputLabelProps={{ shrink: true }}
                 value={study.endDate}
@@ -395,17 +419,19 @@ function EditarPerfilPsicolog({ onPhotoUpdate }) {
               />
               <TextField
                 fullWidth
-                label="Escola"
+                label="Escuela"
                 value={study.school}
                 onChange={(e) => handleStudyChange(study.id, 'school', e.target.value)}
                 margin="normal"
               />
             </Box>
           ))}
+          
+          <br></br>
 
           <Box sx={{ display: 'flex', justifyContent: 'center' }}>
-            <Button variant="outlined" onClick={addStudiesBox} sx={{ mr: 2 }}>
-              Adicionar Estudos{' '}
+            <Button variant="outlined" onClick={addStudiesBox} sx={{ mr: 2, color: 'green', borderColor: 'green' }}>
+              Añadir Estudios{' '}
               <img src="/images/mas.png" style={{ width: '35px', height: '35px', marginLeft: '10px' }} />
             </Button>
           </Box>
@@ -414,8 +440,8 @@ function EditarPerfilPsicolog({ onPhotoUpdate }) {
           <br></br>
 
           <Box sx={{ display: 'flex', justifyContent: 'center' }}>
-            <Button variant="contained" color="primary" onClick={handleSubmit}>
-              Salvar
+            <Button variant="contained" color="primary" onClick={handleSubmit} sx={{bgcolor:'green', '&:hover': {bgcolor: 'darkgreen'} }}>
+              Guardar Cambios
             </Button>
           </Box>
         </Box>
@@ -436,7 +462,7 @@ function EditarPerfilPsicolog({ onPhotoUpdate }) {
         >
           <Typography variant="h6">Éxito</Typography>
           <Typography>Dados guardados com sucesso!</Typography>
-          <Button onClick={() => setShowModal(false)} variant="contained" sx={{ mt: 2 }}>
+          <Button onClick={() => setShowModal(false)} variant="contained" sx={{ mt: 2, bgcolor:'green', '&:hover': {bgcolor: 'darkgreen'}  }}>
             OK
           </Button>
         </Box>

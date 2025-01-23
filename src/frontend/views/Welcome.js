@@ -1,10 +1,26 @@
 import React, { useEffect, useState } from 'react';
-import { Col } from 'react-bootstrap';
 import { useAuth } from "../../backend/config/Authentication";
-import { Card, Box, Typography, Button } from '@mui/material';
+import { Box, Typography, Paper, Grid, Avatar } from '@mui/material';
+import { styled } from '@mui/material/styles';
 import AppointmentCard2 from '../components/AppointmentCard2';
 import { getUserType, getUserName } from '../../backend/services/userService';
 import { fetchActiveAppointments } from '../../backend/services/appointmentService';
+
+const WelcomeHeader = styled(Box)(({ theme }) => ({
+  display: 'flex',
+  alignItems: 'center',
+  marginBottom: theme.spacing(4),
+  padding: theme.spacing(3),
+  borderRadius: theme.shape.borderRadius,
+  background: 'linear-gradient(145deg, #ffffff 0%, #f8fafc 100%)',
+  boxShadow: theme.shadows[3]
+}));
+
+const StyledAvatar = styled(Avatar)(({ theme }) => ({
+  width: 160,
+  height: 160,
+  marginLeft: theme.spacing(3),
+}));
 
 function Welcome() {
   const { user } = useAuth();
@@ -46,34 +62,68 @@ function Welcome() {
   }, [user, isPsychologist]);
 
   return (
-    <Col>
-      <div className="d-flex align-items-center">
-        <h1 className="mb-4 me-3">Bienvenido(a), {name ? name.split(" ")[0] : ""}.</h1>
-        <img
-          src="images/bien-venido.png"
-          alt="Mascot"
-          className="mascot-image img-fluid"
-          style={{ maxWidth: '200px' }}
-        />
-      </div>
-
-      <div className="next-appointments">
-        <h3 className="mb-3">Mis Próximas Citas:</h3>
-        {appointments.length > 0 ? (
-          appointments.map(appointment => (
-            <AppointmentCard2 
-              key={appointment.id} 
-              appointment={appointment}
-              isPsychologist={isPsychologist}
-            />
-          ))
-        ) : (
-          <Typography variant="body2" color="textSecondary">
-            No hay citas programadas.
+    <Box sx={{ p: 3 }}>
+      <WelcomeHeader>
+        <Box sx={{ flexGrow: 1 }}>
+          <Typography variant="h3" component="h1" sx={{
+            fontWeight: 700,
+            background: 'linear-gradient(45deg, #2e7d32 30%, #388e3c 90%)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            mb: 1
+          }}>
+            Bienvenido(a), {name ? name.split(" ")[0] : ""}
           </Typography>
+          <Typography variant="h6" color="text.secondary">
+            {isPsychologist ? 'Panel de Psicólogo' : 'Panel de Cliente'}
+          </Typography>
+        </Box>
+        <StyledAvatar 
+          src="images/bien-venido.png" 
+          alt="Mascot" 
+          variant="rounded"
+        />
+      </WelcomeHeader>
+
+      <Paper elevation={0} sx={{ 
+        p: 3,
+        borderRadius: 3,
+        bgcolor: 'background.paper',
+        boxShadow: 2
+      }}>
+        <Typography variant="h5" component="h2" sx={{ 
+          fontWeight: 600,
+          mb: 3,
+          color: 'success.main'
+        }}>
+          Próximas Citas
+        </Typography>
+
+        {appointments.length > 0 ? (
+          <Grid container spacing={3}>
+            {appointments.map(appointment => (
+              <Grid item xs={12} md={6} lg={4} key={appointment.id}>
+                <AppointmentCard2 
+                  appointment={appointment}
+                  isPsychologist={isPsychologist}
+                />
+              </Grid>
+            ))}
+          </Grid>
+        ) : (
+          <Box sx={{ 
+            p: 4,
+            textAlign: 'center',
+            bgcolor: 'background.default',
+            borderRadius: 2
+          }}>
+            <Typography variant="body1" color="text.secondary">
+              No hay citas programadas
+            </Typography>
+          </Box>
         )}
-      </div>
-    </Col>
+      </Paper>
+    </Box>
   );
 }
 

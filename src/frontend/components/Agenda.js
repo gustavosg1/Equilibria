@@ -182,7 +182,7 @@ const Agenda = ({ open, psychologistId, psychologistName, psychologistPhotoURL, 
           <>
             {/* Renderização do calendário */}
             <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 1 }}>
-              {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map(day => (
+              {['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'].map(day => (
                 <Typography key={day} sx={{ 
                   padding: '8px', 
                   fontWeight: 'bold', 
@@ -275,9 +275,10 @@ const Agenda = ({ open, psychologistId, psychologistName, psychologistPhotoURL, 
                 <Button 
                   variant="contained" 
                   onClick={() => setSelectedDate(null)}
-                  sx={{ width: '100%' }}
+                  sx={{ width: '100%', bgcolor:'green', '&:hover': {bgcolor: 'darkgreen'} 
+                }}
                 >
-                  Fechar
+                  SELECCIONAR
                 </Button>
               </Box>
             </Modal>
@@ -288,13 +289,26 @@ const Agenda = ({ open, psychologistId, psychologistName, psychologistPhotoURL, 
           <Button
             variant="contained"
             color="primary"
+            sx={{bgcolor:'green', '&:hover': {bgcolor: 'darkgreen'} }}
             onClick={async () => {
               try {
                 if (!auth.currentUser?.uid) throw new Error('Usuário não autenticado');
             
+                const now = new Date(); // Momento atual
+            
                 for (const timeKey of selectedTimes) {
                   const [datePart, timePart] = timeKey.split('-hora-');
                   const [year, month, day] = datePart.split('-');
+                  const [hour, minute] = timePart.split('-');
+                  
+                  // Criar objeto Date com a data/hora selecionada
+                  const selectedDateTime = new Date(year, month - 1, day, hour, minute);
+                  
+                  // Verificar se a data/hora é anterior ao momento atual
+                  if (selectedDateTime < now) {
+                    throw new Error('No se pueden agendar citas en fechas/horas pasadas');
+                  }
+            
                   const formattedDate = `${day}/${month}/${year}`;
                   const formattedTime = timePart.replace('-', ':');
             
@@ -314,7 +328,7 @@ const Agenda = ({ open, psychologistId, psychologistName, psychologistPhotoURL, 
                 setModalMessage('Cita programada con éxito!');
                 setShowModal(true);
               } catch (error) {
-                setModalMessage(`Error: ${error.message}`);
+                setModalMessage(error.message);
                 setShowModal(true);
               }
             }}

@@ -10,13 +10,15 @@ import {
   Avatar,
   Grid,
   Autocomplete,
+  Paper,
+  styled
 } from '@mui/material';
 import { fetchLanguages } from '../../backend/services/languageService';
 import { uploadProfilePhoto } from '../../backend/services/storageService';
 import { updateUserProfile } from '../../backend/services/userService';
 import { getAuth } from 'firebase/auth';
 
-function EditarPerfilClient({ onPhotoUpdate }) {
+function EditarPerfilClient({ onPhotoUpdate, onNameUpdate }) { // Adicionamos onNameUpdate
   const [name, setNome] = useState('');
   const [birthDate, setDataNascimento] = useState('');
   const [photo, setFoto] = useState(null);
@@ -38,20 +40,21 @@ function EditarPerfilClient({ onPhotoUpdate }) {
   }, []);
 
   useEffect(() => {
-  if (auth.currentUser?.uid) {
-    const loadCurrentPhoto = async () => {
-      try {
-        const userDoc = await getDoc(doc(db, 'users', auth.currentUser.uid));
-        if (userDoc.exists()) {
-          setFoto(userDoc.data().photoURL || null);
+    if (auth.currentUser?.uid) {
+      const loadCurrentPhoto = async () => {
+        try {
+          const userDoc = await getDoc(doc(db, 'users', auth.currentUser.uid));
+          if (userDoc.exists()) {
+            setFoto(userDoc.data().photoURL || null);
+            setNome(userDoc.data().name || ''); // Carrega o nome do Firestore
+          }
+        } catch (error) {
+          console.error('Erro ao carregar foto:', error.message);
         }
-      } catch (error) {
-        console.error('Erro ao carregar foto:', error.message);
-      }
-    };
-    loadCurrentPhoto();
-  }
-}, [auth.currentUser?.uid]);
+      };
+      loadCurrentPhoto();
+    }
+  }, [auth.currentUser?.uid]);
 
   const handleFotoChange = (e) => {
     setFoto(e.target.files[0]);
@@ -66,11 +69,11 @@ function EditarPerfilClient({ onPhotoUpdate }) {
       const userData = {};
       let downloadURL = null;
 
-      if (photo instanceof File) { // Verifica se é um arquivo novo
+      if (photo instanceof File) {
         downloadURL = await uploadProfilePhoto(photo, user.uid);
         userData.photoURL = downloadURL;
-        setFoto(downloadURL); // Atualiza o estado local com a URL do Firebase
-        if (onPhotoUpdate) onPhotoUpdate(downloadURL); // Passa a URL para o componente pai
+        setFoto(downloadURL);
+        if (onPhotoUpdate) onPhotoUpdate(downloadURL);
       }
 
       if (name) userData.name = name;
@@ -78,85 +81,152 @@ function EditarPerfilClient({ onPhotoUpdate }) {
       if (selectedLanguage) userData.preferredLanguage = selectedLanguage.code;
 
       await updateUserProfile(user.uid, userData);
-      
       setShowModal(true);
+      if (onNameUpdate) onNameUpdate(); // Notifica o componente pai para atualizar o nome
       
     } catch (error) {
       console.error('Erro:', error.message);
     }
   };
 
+  const StyledButton = styled(Button)(({ theme }) => ({
+    borderRadius: '12px',
+    padding: '16px 24px',
+    transition: 'all 0.3s ease',
+    '&:hover': {
+      transform: 'translateY(-2px)',
+      boxShadow: theme.shadows[3]
+    }
+  }));
+
   return (
-    <Grid item xs={12} md={10} lg={12}>
-      <Box sx={{ p: 4, border: '1px solid #ccc', borderRadius: 2, boxShadow: 3, backgroundColor: 'white' }}>
-        <Typography variant="h4" align="center" gutterBottom>
-          Editar Perfil
-        </Typography>
-  
-          
-          {/* Campo para nome */}
-          <TextField
-            label="Nome"
-            fullWidth
-            value={name}
-            onChange={(e) => setNome(e.target.value)}
-            margin="normal"
-          />
-  
-          {/* Campo para data de nascimento */}
-          <TextField
-            label="Data de Nascimento"
-            type="date"
-            fullWidth
-            InputLabelProps={{ shrink: true }}
-            value={birthDate}
-            onChange={(e) => setDataNascimento(e.target.value)}
-            margin="normal"
-          />
-  
-          {/* Campo para idioma preferido */}
-          <Autocomplete
-            options={languages}
-            getOptionLabel={(option) => option.nombre}
-            value={selectedLanguage}
-            onChange={(_, newValue) => setSelectedLanguage(newValue)}
-            renderInput={(params) => (
+    <Grid container style={{ minHeight: '100vh' }}>
+      <Grid item xs={12} style={{ margin: '0 auto' }}>
+        <Paper elevation={3} sx={{ 
+          p: 4,
+          border: '1px solid #ccc',
+          borderRadius: 2,
+          boxShadow: 2,
+          backgroundColor: 'white',
+          width: '100%',
+        }}>
+          <Typography variant="h4" sx={{ 
+            fontWeight: 700,
+            background: 'linear-gradient(45deg, #2e7d32 30%, #388e3c 90%)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            textAlign: 'center',
+            mb: 4
+          }}>
+            Editar Perfil
+          </Typography>
+
+          <Grid container spacing={3}>
+            <Grid item xs={12} md={6}>
               <TextField
-                {...params}
-                label="Idioma Preferido"
                 fullWidth
+                label="Nombre"
+                variant="outlined"
+                value={name}
+                onChange={(e) => setNome(e.target.value)}
                 margin="normal"
+                sx={{ mb: 2 }}
+              />
+              
+              <TextField
+                fullWidth
+                label="Fecha de Nacimiento"
+                type="date"
+                InputLabelProps={{ shrink: true }}
+                variant="outlined"
+                value={birthDate}
+                onChange={(e) => setDataNascimento(e.target.value)}
+                margin="normal"
+                sx={{ mb: 2 }}
+              />
+            </Grid>
+
+            <Grid item xs={12} md={6}>
+              <Autocomplete
+                options={languages}
+                getOptionLabel={(option) => option.nombre}
+                value={selectedLanguage}
+                onChange={(_, newValue) => setSelectedLanguage(newValue)}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label="Idioma Preferido"
+                    fullWidth
+                    variant="outlined"
+                    margin="normal"
+                  />
+                )}
+                sx={{ mb: 2 }}
+              />
+            </Grid>
+          </Grid>
+
+          <Box textAlign="center" mb={4}>
+            <Button 
+              variant="outlined" 
+              component="label" 
+              sx={{ 
+                borderColor: 'success.main',
+                color: 'success.main',
+                backgroundColor: 'white',
+                '&:hover': {
+                  transform: 'translateY(-2px)',
+                  boxShadow: 3
+                },
+                px: 4,
+                py: 1.5,
+                fontSize: '1rem',
+                borderRadius: '12px',
+                textTransform: 'none'
+              }}
+            >
+              SUBIR FOTO
+              <input type="file" hidden onChange={handleFotoChange} />
+            </Button>
+            {photo && (
+              <Avatar
+                src={typeof photo === 'string' ? photo : URL.createObjectURL(photo)}
+                sx={{ 
+                  width: 150, 
+                  height: 150, 
+                  margin: 'auto', 
+                  mt: 3,
+                }}
               />
             )}
-          />
-
-          <br></br>
-
-          <Box component="form" onSubmit={handleSubmit}>
-          {/* Campo para upload de foto */}
-            <Box textAlign="center" mb={2}>
-              <Button variant="contained" component="label">
-                Escolher Foto
-                <input type="file" hidden onChange={handleFotoChange} />
-              </Button>
-              {photo && (
-                <Avatar
-                  src={typeof photo === 'string' ? photo : URL.createObjectURL(photo)}
-                  sx={{ width: 100, height: 100, margin: 'auto', mt: 2 }}
-                />
-            )}
           </Box>
-  
-          {/* Botão de envio */}
-          <Box mt={4} textAlign="center">
-            <Button type="submit" variant="contained" color="primary">
-              Salvar Alterações
+
+          <Box textAlign="center" mt={4}>
+            <Button 
+              variant="outlined" 
+              component="label" 
+              onClick={handleSubmit}
+              sx={{ 
+                borderColor: 'success.main',
+                color: 'success.main',
+                backgroundColor: 'white',
+                '&:hover': {
+                  transform: 'translateY(-2px)',
+                  boxShadow: 3
+                },
+                px: 4,
+                py: 1.5,
+                fontSize: '1rem',
+                borderRadius: '12px',
+                textTransform: 'none'
+              }}
+            >
+              GUARDAR CAMBIOS
             </Button>
           </Box>
-        </Box>
-      </Box>
-  
-      {/* Modal de confirmação */}
+        </Paper>
+      </Grid>
+
       <Modal open={showModal} onClose={() => setShowModal(false)}>
         <Box
           sx={{
@@ -167,12 +237,24 @@ function EditarPerfilClient({ onPhotoUpdate }) {
             bgcolor: 'background.paper',
             boxShadow: 24,
             p: 4,
+            borderRadius: 2,
             textAlign: 'center',
+            minWidth: 300
           }}
         >
-          <Typography variant="h6">Perfil atualizado com sucesso!</Typography>
-          <Button onClick={() => setShowModal(false)} sx={{ mt: 2 }}>
-            Fechar
+          <Typography variant="h6" gutterBottom>Éxito</Typography>
+          <Typography>Datos guardados con éxito!</Typography>
+          <Button 
+            onClick={() => setShowModal(false)}
+            variant="contained"
+            sx={{
+              mt: 2,
+              bgcolor: 'green',
+              '&:hover': { bgcolor: 'darkgreen' },
+              px: 4
+            }}
+          >
+            OK
           </Button>
         </Box>
       </Modal>

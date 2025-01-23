@@ -39,7 +39,7 @@ const AppointmentCard = ({
       />
       <Box sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', flexGrow: 1, p: 2 }}>
         <Typography variant="h6">
-          <strong>{isPsychologist ? 'Cliente:' : 'Psicólogo:'}</strong> 
+          <strong>{isPsychologist ? 'Cliente: ' : 'Psicólogo: '}</strong> 
           {otherUserInfo?.name || 'N/A'}
         </Typography>
         <Typography variant="body1"><strong>Fecha:</strong> {appointment.day}</Typography>
