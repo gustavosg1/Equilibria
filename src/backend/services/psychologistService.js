@@ -93,18 +93,19 @@ export const updatePsychologistProfile = async (userId, userData, photoFile) => 
   try {
     let photoURL = userData.photoURL;
 
-    if (photoFile) {
+    // Verifica se é um arquivo antes de fazer upload
+    if (photoFile instanceof File) {
       const storageRef = ref(storage, `profile-pictures/${userId}/${photoFile.name}`);
       await uploadBytes(storageRef, photoFile);
       photoURL = await getDownloadURL(storageRef);
     }
 
-    await setDoc(doc(db, 'psychologist', userId), { 
-      ...userData, 
-      photoURL 
+    await setDoc(doc(db, 'psychologist', userId), {
+      ...userData,
+      photoURL
     }, { merge: true });
 
-    return photoURL; // Retorna a nova URL
+    return photoURL;
   } catch (error) {
     throw new Error(`Erro ao atualizar perfil: ${error.message}`);
   }

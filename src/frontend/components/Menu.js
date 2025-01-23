@@ -8,7 +8,7 @@ import { FaHome, FaUserMd, FaCalendarAlt, FaSignOutAlt } from 'react-icons/fa';
 
 // Estilización del AppBar
 const StyledAppBar = styled(AppBar)(({ theme }) => ({
-  backgroundColor: theme.palette.success.dark,
+  backgroundColor: '#029E52',
   color: theme.palette.common.white,
   boxShadow: theme.shadows[3],
   padding: theme.spacing(1, 0),

@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { Card, CardMedia, Box, Typography, Button, Chip, CardContent } from '@mui/material';
 import { getDoc, doc } from 'firebase/firestore';
 import { db } from '../../backend/config/FirebaseConfig';
+import { CiTextAlignCenter } from "react-icons/ci";
+import { Padding } from '@mui/icons-material';
 
 const AppointmentCard = ({ 
   appointment,
@@ -55,13 +57,19 @@ const AppointmentCard = ({
             </Button>
           </Box>
         ) : (
-          <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-            <img
-              src="/images/papiro.png"
-              alt="Resumo"
-              style={{ width: 80, height: 80, cursor: 'pointer' }}
-              onClick={onViewSummary}
-            />
+          <Box 
+            sx={{ 
+              display: 'flex', 
+              justifyContent: 'flex-end', // Alinha o ícone à direita
+              alignItems: 'center',      // Centraliza verticalmente
+              height: '100%',            // Garante que o Box ocupe toda a altura
+              cursor: 'pointer',         // Adiciona cursor pointer para indicar que é clicável
+              paddingRight: '40px',
+              marginTop: '-10%',
+            }}
+            onClick={onViewSummary}
+          >
+            <CiTextAlignCenter size={60} />
           </Box>
         )}
       </Box>

@@ -19,6 +19,25 @@ const StyledButton = styled(Button)(({ theme }) => ({
   }
 }));
 
+function TestSpeech() {
+  useEffect(() => {
+    if ('SpeechRecognition' in window) {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      const recognition = new SpeechRecognition();
+      recognition.lang = 'pt-BR';
+      recognition.continuous = true;
+
+      recognition.onstart = () => console.log('Teste: Reconhecimento iniciado');
+      recognition.onresult = (e) => console.log('Teste:', e.results[0][0].transcript);
+      recognition.start();
+
+      return () => recognition.stop();
+    }
+  }, []);
+
+  return <div>Teste de reconhecimento de fala (verifique o console)</div>;
+}
+
 function ProfilePageClient() {
   const { user } = useAuth();
   const [currentPage, setCurrentPage] = useState('welcome');
@@ -76,7 +95,6 @@ function ProfilePageClient() {
                   height: 160, 
                   mx: 'auto',
                   mb: 2,
-                  border: '4px solid #2e7d32',
                   boxShadow: 3
                 }}
               />

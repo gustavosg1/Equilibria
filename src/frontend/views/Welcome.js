@@ -67,7 +67,7 @@ function Welcome() {
         <Box sx={{ flexGrow: 1 }}>
           <Typography variant="h3" component="h1" sx={{
             fontWeight: 700,
-            background: 'linear-gradient(45deg, #2e7d32 30%, #388e3c 90%)',
+            background: '#029E52',
             WebkitBackgroundClip: 'text',
             WebkitTextFillColor: 'transparent',
             mb: 1

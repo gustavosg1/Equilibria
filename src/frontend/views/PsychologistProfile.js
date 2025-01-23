@@ -92,8 +92,8 @@ function PsychologistProfile({ onSelect }) {
             onClick={() => onSelect("editarPerfil")}
             startIcon={<FaEdit />}
             sx={{ 
-              bgcolor: 'success.main',
-              '&:hover': { bgcolor: 'success.dark' },
+              bgcolor: '#029E52',
+              '&:hover': { bgcolor: '#029E52' },
               borderRadius: '12px',
               textTransform: 'none',
               fontSize: '1rem',

@@ -69,7 +69,7 @@ function EditarPerfilPsicolog({ onPhotoUpdate, onNameUpdate }) {
       const userData = {
         name,
         birthDate,
-        photoURL: photo instanceof File ? null : photo,
+        photoURL: photo, // Mantém a URL existente por padrão
         description,
         studies: studiesList,
         visible,
@@ -78,15 +78,21 @@ function EditarPerfilPsicolog({ onPhotoUpdate, onNameUpdate }) {
         chosenLanguages,
         availability,
       };
-
-      const newPhotoURL = await updatePsychologistProfile(userId, userData, photo); 
+  
+      let newPhotoURL = photo;
+  
+      // Só faz upload se for um arquivo novo
       if (photo instanceof File) {
-        setPhoto(newPhotoURL); // Atualiza o estado LOCAL
-        if (onPhotoUpdate) onPhotoUpdate(newPhotoURL); // Passa a URL para o componente PAI
+        newPhotoURL = await updatePsychologistProfile(userId, userData, photo);
+        setPhoto(newPhotoURL);
+        if (onPhotoUpdate) onPhotoUpdate(newPhotoURL);
+      } else {
+        // Atualiza sem modificar a foto
+        await updatePsychologistProfile(userId, userData, null);
       }
-      
+  
       setShowModal(true);
-      if (onNameUpdate) onNameUpdate(); // Notifica o componente pai para atualizar o nome
+      if (onNameUpdate) onNameUpdate();
     } catch (error) {
       console.error('Error al atualizar el perfil del usuário: ', error);
     }
@@ -156,7 +162,7 @@ function EditarPerfilPsicolog({ onPhotoUpdate, onNameUpdate }) {
         >
           <Typography variant="h4" sx={{ 
                       fontWeight: 700,
-                      background: 'linear-gradient(45deg, #2e7d32 30%, #388e3c 90%)',
+                      background: '#029E52',
                       WebkitBackgroundClip: 'text',
                       WebkitTextFillColor: 'transparent'
                     }}>
@@ -375,7 +381,7 @@ function EditarPerfilPsicolog({ onPhotoUpdate, onNameUpdate }) {
           <br></br>
 
           <Box textAlign="center" mb={2}>
-            <Button variant="contained" component="label" sx={{bgcolor:'green', '&:hover': {bgcolor: 'darkgreen'} }}>
+            <Button variant="contained" component="label" sx={{bgcolor:'#029E52', '&:hover': {bgcolor: '#029E52'} }}>
               SUBIR FOTO
               <input type="file" hidden onChange={handleFotoChange} />
             </Button>
@@ -440,7 +446,7 @@ function EditarPerfilPsicolog({ onPhotoUpdate, onNameUpdate }) {
           <br></br>
 
           <Box sx={{ display: 'flex', justifyContent: 'center' }}>
-            <Button variant="contained" color="primary" onClick={handleSubmit} sx={{bgcolor:'green', '&:hover': {bgcolor: 'darkgreen'} }}>
+            <Button variant="contained" color="primary" onClick={handleSubmit} sx={{bgcolor:'#029E52', '&:hover': {bgcolor: '#029E52'} }}>
               Guardar Cambios
             </Button>
           </Box>

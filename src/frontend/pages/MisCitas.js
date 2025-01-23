@@ -63,7 +63,7 @@ const MisCitas = () => {
         const summary = await summarizeTranscription(appointmentData.transcription);
         setTranscription(summary);
       } else {
-        setTranscription('Nenhuma transcrição disponível');
+        setTranscription('Ninguna transcripción disponible');
       }
     } catch (error) {
       console.error('Erro ao gerar resumo:', error.message);
@@ -151,8 +151,8 @@ const MisCitas = () => {
           maxWidth: 600,
           borderRadius: 2
         }}>
-          <Typography variant="h6" gutterBottom>
-            Resumo da Sessão
+          <Typography variant="h6" gutterBottom sx={{textAlign: 'center'}}>
+            Resumen de la Sesión
           </Typography>
           <Box sx={{ maxHeight: 400, overflow: 'auto' }}>
             {isSummarizing ? (

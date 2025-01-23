@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Dialog, DialogTitle, DialogContent, Typography, CircularProgress, 
-  FormLabel, Chip, Button, Box, Modal, IconButton 
+  FormLabel, Chip, Button, Box, Modal, IconButton, styled 
 } from '@mui/material';
 import { 
   format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, 
@@ -14,8 +14,22 @@ import { fetchPsychologistAvailability } from '../../backend/services/psychologi
 import { createAppointment } from '../../backend/services/appointmentService';
 import { getUserName } from '../../backend/services/userService';
 
+const TimeSlotChip = styled(Chip)(({ theme, selected }) => ({
+  fontSize: '1rem',
+  padding: '8px 16px',
+  borderRadius: '12px',
+  transition: 'all 0.2s ease',
+  backgroundColor: selected ? theme.palette.success.main : theme.palette.grey[100],
+  color: selected ? 'white' : theme.palette.text.primary,
+  border: selected ? 'none' : `1px solid ${theme.palette.grey[300]}`,
+  '&:hover': {
+    transform: 'translateY(-2px)',
+    boxShadow: theme.shadows[2],
+    backgroundColor: selected ? theme.palette.success.dark : theme.palette.grey[200]
+  }
+}));
+
 const Agenda = ({ open, psychologistId, psychologistName, psychologistPhotoURL, onClose }) => {
-  // Estados
   const [availability, setAvailability] = useState([]);
   const [loading, setLoading] = useState(true);
   const [clientName, setClientName] = useState('');
@@ -25,8 +39,6 @@ const Agenda = ({ open, psychologistId, psychologistName, psychologistPhotoURL, 
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(null);
   const [availableSlots, setAvailableSlots] = useState([]);
-
-  //Transformar los dias de la semana en ingles para español, pues la biblioteca está em ingles.
 
   const diasDaSemanaMap = {
     Monday: 'Lunes',
@@ -38,19 +50,16 @@ const Agenda = ({ open, psychologistId, psychologistName, psychologistPhotoURL, 
     Sunday: 'Domingo',
   };
 
-  // Gerar estrutura do calendário corrigida
   const monthStart = startOfMonth(currentDate);
   const monthEnd = endOfMonth(currentDate);
   const dates = eachDayOfInterval({ start: monthStart, end: monthEnd });
 
-  // Dividir em semanas corretamente
   const weeks = [];
   const firstDayOfMonth = monthStart;
-  const startDay = firstDayOfMonth.getDay(); // 0 (Domingo) a 6 (Sábado)
-  
-  // 1. Preencher com dias do mês anterior
+  const startDay = firstDayOfMonth.getDay();
+
   const calendarDays = [];
-  const daysFromPrevMonth = startDay === 0 ? 6 : startDay; // Ajuste para calendário Domingo-Sábado
+  const daysFromPrevMonth = startDay === 0 ? 6 : startDay;
 
   for (let i = daysFromPrevMonth; i > 0; i--) {
     const date = new Date(firstDayOfMonth);
@@ -58,57 +67,18 @@ const Agenda = ({ open, psychologistId, psychologistName, psychologistPhotoURL, 
     calendarDays.push(date);
   }
 
-  // 2. Adicionar dias do mês atual
   calendarDays.push(...dates);
 
-  // 3. Completar com dias do próximo mês
-  while (calendarDays.length < 42) { // 6 semanas
+  while (calendarDays.length < 42) {
     const lastDate = new Date(calendarDays[calendarDays.length - 1]);
     lastDate.setDate(lastDate.getDate() + 1);
     calendarDays.push(lastDate);
   }
 
-  // 4. Dividir em semanas
   for (let i = 0; i < calendarDays.length; i += 7) {
     weeks.push(calendarDays.slice(i, i + 7));
   }
 
-  // Renderização dos dias
-  {weeks.map((week, weekIndex) => (
-    <Box key={weekIndex} sx={{ display: 'flex' }}>
-      {week.map((date, dayIndex) => {
-        const isCurrentMonth = isSameMonth(date, currentDate);
-        const isTodayDay = isToday(date);
-
-        return (
-          <Box
-            key={dayIndex}
-            sx={{
-              flex: 1,
-              border: '1px solid #e0e0e0',
-              minHeight: 120,
-              opacity: isCurrentMonth ? 1 : 0.5,
-              backgroundColor: isCurrentMonth ? '#fff' : '#f5f5f5'
-            }}
-          >
-            <Typography 
-              sx={{ 
-                fontWeight: isTodayDay ? 'bold' : 'normal',
-                color: isTodayDay ? 'primary.main' : 'text.primary',
-                textAlign: 'center',
-                p: 1
-              }}
-            >
-              {format(date, 'd')}
-            </Typography>
-          </Box>
-        );
-      })}
-    </Box>
-  ))}
-  
-
-  // Buscar disponibilidade do psicólogo
   useEffect(() => {
     const loadData = async () => {
       if (open && psychologistId) {
@@ -130,7 +100,6 @@ const Agenda = ({ open, psychologistId, psychologistName, psychologistPhotoURL, 
     loadData();
   }, [open, psychologistId]);
 
-  // Alternar seleção de horário
   const toggleTimeSelection = (date, time) => {
     const timeKey = `${format(date, 'yyyy-MM-dd')}-hora-${time.replace(':', '-')}`;
     setSelectedTimes(prev => 
@@ -140,11 +109,10 @@ const Agenda = ({ open, psychologistId, psychologistName, psychologistPhotoURL, 
     );
   };
 
-  // Ao clicar em um dia
   const handleDayClick = async (date) => {
     if (!isSameMonth(date, currentDate)) return;
     
-    const dayOfWeekEnglish = format(date, 'EEEE'); // Retorna o dia da semana em inglês (ex: "Monday")
+    const dayOfWeekEnglish = format(date, 'EEEE');
     const dayOfWeekSpanish = diasDaSemanaMap[dayOfWeekEnglish];
     const dayAvailability = availability.find(a => a.day.toLowerCase() === dayOfWeekSpanish.toLowerCase());
     
@@ -180,7 +148,6 @@ const Agenda = ({ open, psychologistId, psychologistName, psychologistPhotoURL, 
           </Box>
         ) : (
           <>
-            {/* Renderização do calendário */}
             <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 1 }}>
               {['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'].map(day => (
                 <Typography key={day} sx={{ 
@@ -231,7 +198,6 @@ const Agenda = ({ open, psychologistId, psychologistName, psychologistPhotoURL, 
               )}
             </Box>
 
-            {/* Modal de horários */}
             <Modal open={!!selectedDate} onClose={() => setSelectedDate(null)}>
               <Box sx={{ 
                 position: 'absolute',
@@ -245,7 +211,7 @@ const Agenda = ({ open, psychologistId, psychologistName, psychologistPhotoURL, 
                 width: '600px',
                 maxWidth: '90%',
               }}>
-                <Typography variant="h6" sx={{ mb: 2 }}>
+                <Typography variant="h6" sx={{ mb: 2, textAlign: 'center',  }}>
                   Horários em {format(selectedDate, 'dd/MM/yyyy')}
                 </Typography>
                 
@@ -255,18 +221,12 @@ const Agenda = ({ open, psychologistId, psychologistName, psychologistPhotoURL, 
                   const isSelected = selectedTimes.includes(timeKey);
                   
                   return (
-                    <Chip
+                    <TimeSlotChip
                       key={index}
                       label={time}
                       clickable
-                      color={isSelected ? "primary" : "default"}
+                      selected={isSelected}
                       onClick={() => toggleTimeSelection(selectedDate, time)}
-                      sx={{ 
-                        fontSize: '0.9rem',
-                        padding: '5px 10px',
-                        backgroundColor: isSelected ? '#1976d2' : '#e0e0e0',
-                        color: isSelected ? 'white' : 'inherit'
-                      }}
                     />
                   );
                 })}
@@ -275,8 +235,7 @@ const Agenda = ({ open, psychologistId, psychologistName, psychologistPhotoURL, 
                 <Button 
                   variant="contained" 
                   onClick={() => setSelectedDate(null)}
-                  sx={{ width: '100%', bgcolor:'green', '&:hover': {bgcolor: 'darkgreen'} 
-                }}
+                  sx={{ width: '100%', bgcolor:'green', '&:hover': {bgcolor: 'darkgreen'} }}
                 >
                   SELECCIONAR
                 </Button>
@@ -294,17 +253,15 @@ const Agenda = ({ open, psychologistId, psychologistName, psychologistPhotoURL, 
               try {
                 if (!auth.currentUser?.uid) throw new Error('Usuário não autenticado');
             
-                const now = new Date(); // Momento atual
+                const now = new Date();
             
                 for (const timeKey of selectedTimes) {
                   const [datePart, timePart] = timeKey.split('-hora-');
                   const [year, month, day] = datePart.split('-');
                   const [hour, minute] = timePart.split('-');
                   
-                  // Criar objeto Date com a data/hora selecionada
                   const selectedDateTime = new Date(year, month - 1, day, hour, minute);
                   
-                  // Verificar se a data/hora é anterior ao momento atual
                   if (selectedDateTime < now) {
                     throw new Error('No se pueden agendar citas en fechas/horas pasadas');
                   }
@@ -339,7 +296,6 @@ const Agenda = ({ open, psychologistId, psychologistName, psychologistPhotoURL, 
         </Box>
       </DialogContent>
 
-      {/* Modal de confirmação */}
       <Modal open={showModal} onClose={() => setShowModal(false)}>
         <Box sx={{ 
           position: 'absolute', 

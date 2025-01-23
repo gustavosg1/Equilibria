@@ -48,9 +48,9 @@ function ProfilePagePsychologist() {
     const loadData = async () => {
       if (user?.uid) {
         try {
-          const data = await fetchPsychologistData(user.uid);
-          setPhoto(data.photoURL || '');
-          setName(data.name || ''); // Carrega o nome ao montar o componente
+          const profileData = await fetchPsychologistProfile(user.uid);
+          setPhoto(profileData.photoURL || '');
+          setName(profileData.name || ''); // Nome vindo do Firestore
         } catch (error) {
           console.error('Erro ao carregar dados:', error.message);
         }
@@ -88,7 +88,6 @@ function ProfilePagePsychologist() {
                   height: 160, 
                   mx: 'auto',
                   mb: 2,
-                  border: '4px solid #2e7d32',
                   boxShadow: 3
                 }}
               />
@@ -113,7 +112,7 @@ function ProfilePagePsychologist() {
                 onClick={() => setCurrentPage('welcome')}
                 sx={{
                   '& .MuiButton-startIcon': { mr: 2 },
-                  bgcolor: currentPage === 'welcome' ? 'success.main' : 'transparent',
+                  bgcolor: currentPage === 'welcome' ? '#029E52' : 'transparent',
                   color: currentPage === 'welcome' ? 'white' : 'text.primary'
                 }}
               >
@@ -128,7 +127,7 @@ function ProfilePagePsychologist() {
                 onClick={() => setCurrentPage('perfil')}
                 sx={{
                   '& .MuiButton-startIcon': { mr: 2 },
-                  bgcolor: currentPage === 'perfil' ? 'success.main' : 'transparent',
+                  bgcolor: currentPage === 'perfil' ? '#029E52' : 'transparent',
                   color: currentPage === 'perfil' ? 'white' : 'text.primary'
                 }}
               >
@@ -143,7 +142,7 @@ function ProfilePagePsychologist() {
                 onClick={() => setCurrentPage('misResenas')}
                 sx={{
                   '& .MuiButton-startIcon': { mr: 2 },
-                  bgcolor: currentPage === 'misResenas' ? 'success.main' : 'transparent',
+                  bgcolor: currentPage === 'misResenas' ? '#029E52' : 'transparent',
                   color: currentPage === 'misResenas' ? 'white' : 'text.primary'
                 }}
               >
