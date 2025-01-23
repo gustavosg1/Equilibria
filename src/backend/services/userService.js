@@ -88,3 +88,4 @@ export const updateUserProfile = async (userId, userData) => {
     throw new Error('Erro ao atualizar perfil');
   }
 };
+

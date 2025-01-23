@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Slider, TextField, MenuItem, Box, Card, CardContent, CardMedia, Typography, Grid, Container, Select, Chip } from '@mui/material';
 import Menu from '../components/Menu';
-import { getFirestore, collection, getDocs, getDoc, doc } from 'firebase/firestore';
+import { getFirestore, collection, getDocs } from 'firebase/firestore';
 import Agenda from '../components/Agenda';
+import { fetchPsychologistReviews } from '../../backend/services/psychologistService';
 
 function Especialistas() {
   const [psychologists, setPsychologists] = useState([]);
@@ -12,16 +13,16 @@ function Especialistas() {
   const [selectedSpecialty, setSelectedSpecialty] = useState('');
   const [selectedLanguage, setSelectedLanguage] = useState('');
   const [searchName, setSearchName] = useState('');
+  const [reviews, setReviews] = useState({}); // Armazena as avaliações dos psicólogos
 
   const [open, setOpen] = useState(false);
   const [psychologistId, setPsychologistId] = useState(null);
 
   const db = getFirestore();
 
+  // Busca psicólogos, especialidades e idiomas
   useEffect(() => {
-    // Busca psicólogos
-    console.log("Estado de open:", open);
-    async function fetchPsychologists() {
+    const fetchPsychologists = async () => {
       const psychologistCollection = collection(db, 'psychologist');
       try {
         const snapshot = await getDocs(psychologistCollection);
@@ -33,12 +34,11 @@ function Especialistas() {
         });
         setPsychologists(filteredPsychologists);
       } catch (error) {
-        console.error('Erro ao buscar documentos:', error);
+        console.error('Erro ao buscar psicólogos:', error);
       }
-    }
+    };
 
-    // Busca especialidades
-    async function fetchSpecialties() {
+    const fetchSpecialties = async () => {
       const therapiesCollection = collection(db, 'therapies');
       try {
         const snapshot = await getDocs(therapiesCollection);
@@ -47,10 +47,9 @@ function Especialistas() {
       } catch (error) {
         console.error('Erro ao buscar especialidades:', error);
       }
-    }
+    };
 
-    // Busca idiomas
-    async function fetchLanguages() {
+    const fetchLanguages = async () => {
       const languageCollection = collection(db, 'idiomas');
       try {
         const snapshot = await getDocs(languageCollection);
@@ -59,13 +58,34 @@ function Especialistas() {
       } catch (error) {
         console.error('Erro ao buscar idiomas:', error);
       }
-    }
+    };
 
     fetchPsychologists();
     fetchSpecialties();
     fetchLanguages();
-  }, []);
+  }, [db]);
 
+  // Busca as avaliações dos psicólogos
+  useEffect(() => {
+    const fetchReviews = async () => {
+      const reviewsData = {};
+      for (const psychologist of psychologists) {
+        try {
+          const reviews = await fetchPsychologistReviews(psychologist.id);
+          const totalRate = reviews.reduce((sum, review) => sum + review.rate, 0);
+          const averageRate = reviews.length > 0 ? totalRate / reviews.length : 0;
+          reviewsData[psychologist.id] = { averageRate, reviewCount: reviews.length };
+        } catch (error) {
+          console.error('Erro ao buscar avaliações:', error);
+        }
+      }
+      setReviews(reviewsData);
+    };
+
+    if (psychologists.length > 0) {
+      fetchReviews();
+    }
+  }, [psychologists]);
 
   // Atualiza intervalo de preços
   const handlePriceRangeChange = (event, newValue) => {
@@ -81,34 +101,11 @@ function Especialistas() {
     return isWithinPrice && matchesSpecialty && matchesLanguage && matchesNameSearch;
   });
 
-  const PsychologistCard = ({ psychologist }) => {
-    const [averageRate, setAverageRate] = useState(0); // Armazena a média de notas
-    const [reviewCount, setReviewCount] = useState(0); // Armazena a contagem de reviews
-  
-    useEffect(() => {
-      const fetchReviews = async () => {
-        try {
-          const reviewDoc = await getDoc(doc(db, 'reviews', psychologist.id)); // Busca as reviews pelo ID do psicólogo
-          if (reviewDoc.exists()) {
-            const reviews = reviewDoc.data().reviews || []; // Extrai as reviews
-            const totalRate = reviews.reduce((acc, review) => acc + review.rate, 0); // Soma todas as notas
-            setAverageRate(reviews.length > 0 ? totalRate / reviews.length : 0); // Calcula a média
-            setReviewCount(reviews.length); // Define o número de reviews
-          }
-        } catch (error) {
-          console.error('Erro ao buscar reviews:', error);
-        }
-      };
-  
-      fetchReviews();
-    }, [psychologist.id]);
-  
+  // Componente PsychologistCard
+  const PsychologistCard = ({ psychologist, averageRate, reviewCount, onClick }) => {
     return (
       <Card
-        onClick={() => {
-          setPsychologistId(psychologist.id);
-          setTimeout(() => setOpen(true), 0);
-        }}
+        onClick={onClick}
         sx={{ display: 'flex', mb: 2, p: 2, boxShadow: 3, width: '100%', position: 'relative' }}
       >
         <CardMedia
@@ -152,14 +149,14 @@ function Especialistas() {
         {/* Seção inferior direita para nota, estrelas e reviews */}
         <Box
           sx={{
-            position: 'absolute', // Define posição relativa ao card
-            bottom: 8, // Alinha ao fundo com 8px de margem
-            right: 8, // Alinha à direita com 8px de margem
-            textAlign: 'right', // Texto alinhado à direita
-            display: 'flex', // Define layout flexível para alinhar conteúdo
-            flexDirection: 'column', // Coloca os elementos em coluna
-            alignItems: 'flex-end', // Alinha os itens à direita
-            gap: 0.5, // Espaçamento entre os itens
+            position: 'absolute',
+            bottom: 8,
+            right: 8,
+            textAlign: 'right',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'flex-end',
+            gap: 0.5,
           }}
         >
           {/* Nota */}
@@ -268,19 +265,27 @@ function Especialistas() {
         <Grid container spacing={3}>
           {filteredPsychologists.map((psychologist) => (
             <Grid item xs={12} md={12} key={psychologist.id}>
-              <PsychologistCard psychologist={psychologist} />
+              <PsychologistCard
+                psychologist={psychologist}
+                averageRate={reviews[psychologist.id]?.averageRate || 0}
+                reviewCount={reviews[psychologist.id]?.reviewCount || 0}
+                onClick={() => {
+                  setPsychologistId(psychologist.id);
+                  setTimeout(() => setOpen(true), 0);
+                }}
+              />
             </Grid>
           ))}
         </Grid>
       </Container>
       {psychologistId && open && (
-      <Agenda
-        psychologistId={psychologistId}
-        psychologistName={psychologists.find(p => p.id === psychologistId)?.name || ''}
-        psychologistPhotoURL={psychologists.find(p => p.id === psychologistId)?.photoURL || ''}
-        open={open}
-        onClose={() => setOpen(false)}
-      />
+        <Agenda
+          psychologistId={psychologistId}
+          psychologistName={psychologists.find((p) => p.id === psychologistId)?.name || ''}
+          psychologistPhotoURL={psychologists.find((p) => p.id === psychologistId)?.photoURL || ''}
+          open={open}
+          onClose={() => setOpen(false)}
+        />
       )}
     </Box>
   );

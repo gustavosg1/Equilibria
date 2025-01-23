@@ -5,9 +5,9 @@ import {
   collection, 
   getDocs,
   getFirestore,
-  updateDoc 
+  updateDoc, query, where 
 } from 'firebase/firestore';
-import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { getStorage, ref, uploadBytes, getDownloadURL,  } from 'firebase/storage';
 import { db, storage } from '../config/FirebaseConfig';
 
 
@@ -128,5 +128,71 @@ export const fetchAuxiliaryData = async () => {
     };
   } catch (error) {
     throw new Error(`Erro ao buscar dados auxiliares: ${error.message}`);
+  }
+};
+
+export const fetchVisiblePsychologists = async () => {
+  try {
+
+    const q = query(
+      collection(db, 'psychologist'),
+      where('visible', '==', true)
+    );
+    
+    const snapshot = await getDocs(q);
+    
+    return snapshot.docs.map(doc => ({
+      id: doc.id,  
+      ...doc.data()
+    }));
+    
+  } catch (error) {
+    console.error("Erro detalhado:", error);
+    throw new Error('Erro ao buscar psicólogos');
+  }
+};
+
+export const fetchPsychologistReviews = async (psychologistId) => {
+  try {
+    const reviewDoc = await getDoc(doc(db, 'reviews', psychologistId));
+    if (reviewDoc.exists()) {
+      // Retorna o array de reviews ou um array vazio se não houver reviews
+      return reviewDoc.data().reviews || [];
+    }
+    return []; // Retorna um array vazio se o documento não existir
+  } catch (error) {
+    throw new Error('Erro ao buscar avaliações');
+  }
+};
+
+export const fetchPsychologistAvailability = async (psychologistId) => {
+  try {
+    const docSnap = await getDoc(doc(db, 'psychologist', psychologistId));
+    if (!docSnap.exists()) throw new Error('Psicólogo não encontrado');
+    
+    return {
+      availability: docSnap.data().availability || [],
+      name: docSnap.data().name || ''
+    };
+  } catch (error) {
+    throw new Error(`Erro ao buscar disponibilidade: ${error.message}`);
+  }
+};
+
+export const updateAppointmentStatus = async (appointmentId, status) => {
+  try {
+    const appointmentRef = doc(db, 'appointments', appointmentId);
+    await updateDoc(appointmentRef, { active: status });
+  } catch (error) {
+    throw new Error(`Erro ao atualizar agendamento: ${error.message}`);
+  }
+};
+
+export const saveCallTranscription = async (appointmentId, transcription) => {
+  try {
+    const appointmentRef = doc(db, 'appointments', appointmentId);
+    await updateDoc(appointmentRef, { transcription });
+  } catch (error) {
+    throw new Error(`Erro ao salvar transcrição: ${error.message}`);
   }
 };

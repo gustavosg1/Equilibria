@@ -12,3 +12,4 @@ export const fetchLanguages = async () => {
     throw new Error('Erro ao buscar idiomas');
   }
 };
+

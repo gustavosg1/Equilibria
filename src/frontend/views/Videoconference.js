@@ -1,68 +1,75 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { getFirestore, doc, updateDoc, getDoc } from 'firebase/firestore';
-import { getAuth } from 'firebase/auth';
-import Review from './Review';
 import { FaPhoneSlash } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
+import { checkUserRole } from '../../backend/services/userService';
+import { updateAppointmentStatus, saveCallTranscription } from '../../backend/services/appointmentService';
+import { auth } from '../../backend/config/FirebaseConfig';
+import Review from './Review';
+import { getDoc, doc } from 'firebase/firestore';
+import { db } from '../../backend/config/FirebaseConfig';
+import './Videoconference.css';
 
 const Videoconference = ({ appointmentId, psychologistId }) => {
   const jitsiApiRef = useRef(null);
   const [language, setLanguage] = useState('en-US');
   const [isPsychologist, setIsPsychologist] = useState(false);
   const [showReview, setShowReview] = useState(false);
-
+  const [isEndingCall, setIsEndingCall] = useState(false);
   const transcriptionRef = useRef('');
-  const db = getFirestore();
-  const auth = getAuth();
   const navigate = useNavigate();
 
-  // Verifica se o usuário é psicólogo
+  // Verifica papel do usuário
   useEffect(() => {
-    const checkUserRole = async () => {
+    const verifyRole = async () => {
       try {
         const user = auth.currentUser;
         if (user) {
-          // Verifica primeiro na collection psychologist
-          const psychologistDoc = await getDoc(doc(db, 'psychologist', user.uid));
+          const role = await checkUserRole(user.uid);
+          setIsPsychologist(role === 'psychologist');
           
-          if (psychologistDoc.exists()) {
-            setIsPsychologist(true);
-          } else {
-            // Se não for psicólogo, verifica a language do usuário comum
+          if (role === 'user') {
             const userDoc = await getDoc(doc(db, 'users', user.uid));
-            if (userDoc.exists()) {
-              setLanguage(userDoc.data().preferredLanguage || 'en-US');
-            }
+            setLanguage(userDoc.data()?.preferredLanguage || 'en-US');
           }
         }
       } catch (error) {
-        console.error('Erro ao verificar papel do usuário:', error);
+        console.error(error.message);
       }
     };
+    
+    verifyRole();
+  }, []);
 
-    checkUserRole();
-  }, [auth, db]);
-
-  // Inicializa o Jitsi Meet
+  // Configura Jitsi Meet
   useEffect(() => {
-    if (!jitsiApiRef.current && window.JitsiMeetExternalAPI) {
+    const initializeJitsi = () => {
+      if (!window.JitsiMeetExternalAPI) {
+        console.error('Jitsi API não carregada');
+        return;
+      }
+
       const domain = 'meet.jit.si';
       const options = {
-        roomName: `room-${appointmentId || Date.now()}`,
-        parentNode: document.getElementById('jaas-container'),
+        roomName: `terapia-${appointmentId}-${Date.now()}`,
+        parentNode: document.getElementById('jitsi-container'),
         configOverwrite: {
+          disableSimulcast: true,
           startWithAudioMuted: false,
           startWithVideoMuted: false,
         },
         interfaceConfigOverwrite: {
           TOOLBAR_BUTTONS: ['microphone', 'camera', 'hangup'],
-        },
+        }
       };
 
       jitsiApiRef.current = new window.JitsiMeetExternalAPI(domain, options);
-    } else if (!window.JitsiMeetExternalAPI) {
-      console.error('Jitsi Meet API não foi carregada corretamente.');
-    }
+      
+      jitsiApiRef.current.addListener('readyToClose', () => {
+        handleEndCall();
+      });
+    };
+
+    if (appointmentId) initializeJitsi();
 
     return () => {
       if (jitsiApiRef.current) {
@@ -72,12 +79,10 @@ const Videoconference = ({ appointmentId, psychologistId }) => {
     };
   }, [appointmentId]);
 
-  // Configura o reconhecimento de fala
+  // Configura reconhecimento de voz
   useEffect(() => {
-    if (!isPsychologist && ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
-      const SpeechRecognition =
-        window.SpeechRecognition || window.webkitSpeechRecognition;
-
+    if (!isPsychologist && 'SpeechRecognition' in window) {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
       const recognition = new SpeechRecognition();
       recognition.lang = language;
       recognition.continuous = true;
@@ -91,100 +96,61 @@ const Videoconference = ({ appointmentId, psychologistId }) => {
             transcript += result[0].transcript;
           }
         }
-
         transcriptionRef.current += ` ${transcript}`.trim();
       };
 
-      recognition.onerror = (event) => {
-        console.error('Erro no reconhecimento de fala:', event.error);
-      };
-
       recognition.start();
-
-      return () => {
-        recognition.stop();
-      };
+      return () => recognition.stop();
     }
   }, [isPsychologist, language]);
 
-  // Salva a transcrição no Firestore
-  const saveTranscription = async () => {
-    try {
-      if (!appointmentId) {
-        console.error('ID do appointment não foi fornecido.');
-        return;
-      }
-      const appointmentRef = doc(db, 'appointments', appointmentId);
-      await updateDoc(appointmentRef, { transcription: transcriptionRef.current });
-      console.log('Transcrição salva com sucesso:', transcriptionRef.current);
-    } catch (error) {
-      console.error('Erro ao salvar a transcrição:', error);
-    }
-  };
-
-  // Finaliza a videoconferência
+  // Finaliza chamada
   const handleEndCall = async () => {
     try {
-      if (!appointmentId) {
-        console.error('ID do appointment não foi fornecido.');
-        return;
+      setIsEndingCall(true);
+      
+      // Destrói a instância do Jitsi
+      if (jitsiApiRef.current) {
+        jitsiApiRef.current.dispose();
+        jitsiApiRef.current = null;
       }
 
-      const appointmentRef = doc(db, 'appointments', appointmentId);
-      await updateDoc(appointmentRef, { active: false });
+      // Atualiza status do agendamento
+      await updateAppointmentStatus(appointmentId, false);
 
-      // Verificação final para garantir que o estado está atualizado
-      const user = auth.currentUser;
-      const psychologistDoc = await getDoc(doc(db, 'psychologist', user.uid));
-      
-      if (psychologistDoc.exists()) {
+      // Redireciona ou mostra review
+      if (isPsychologist) {
         navigate('/Dashboard');
       } else {
-        await saveTranscription();
+        await saveCallTranscription(appointmentId, transcriptionRef.current);
         setShowReview(true);
       }
     } catch (error) {
-      console.error('Erro ao finalizar a chamada:', error);
+      console.error('Erro ao finalizar chamada:', error.message);
+    } finally {
+      setIsEndingCall(false);
     }
   };
 
   return (
-    <div style={{ height: '100vh', width: '100%' }}>
-      {!showReview && (
+    <div className="videoconference-container">
+      {!showReview ? (
         <>
-          <div id="jaas-container" style={{ height: '90%', width: '100%' }}></div>
-            <div
-              style={{
-                display: 'flex',
-                justifyContent: 'center', // Centraliza horizontalmente
-                alignItems: 'center', // Centraliza verticalmente
-                height: '10%', // Define a altura do contêiner para centralizar
-              }}
+          <div id="jitsi-container" style={{ height: '90vh' }} />
+          <div className="call-controls">
+            <button 
+              onClick={handleEndCall} 
+              className="end-call-button"
+              disabled={isEndingCall}
             >
-              <button
-                onClick={handleEndCall}
-                style={{
-                  padding: '1rem 2rem',
-                  fontSize: '1rem',
-                  backgroundColor: '#ff0000', // Cor de fundo vermelha
-                  color: '#fff',
-                  border: 'none',
-                  borderRadius: '5px',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '0.5rem', // Espaçamento entre o ícone e o texto
-                }}
-              >
-                <FaPhoneSlash /> {/* Ícone de telefone */}
-                TERMINAR VIDEOLLAMADA
-              </button>
-            </div>
+              <FaPhoneSlash />
+              {isEndingCall ? 'Finalizando...' : 'Terminar Videollamada'}
+            </button>
+          </div>
         </>
+      ) : (
+        <Review psychologistId={psychologistId} />
       )}
-
-      {showReview && <Review psychologistId={psychologistId} />}
     </div>
   );
 };

@@ -11,7 +11,7 @@ import {
   Modal,
   Grid,
   Paper,
-  CircularProgress
+  CircularProgress, Container
 } from '@mui/material';
 
 const Review = ({ psychologistId }) => {
@@ -90,54 +90,101 @@ const Review = ({ psychologistId }) => {
   );
 
   return (
-    <Grid container spacing={3} sx={{ mt: 4, pl: 3 }}>
-      <Grid item xs={12} md={8}>
-        <Paper elevation={3} sx={{ p: 3, width: '100%' }}>
-          <Typography variant="h5" align="center" gutterBottom>
-            Deixe sua avaliação
-          </Typography>
-
-          {error && (
-            <Typography color="error" textAlign="center" mb={2}>
-              {error}
+    <Container 
+      maxWidth="lg"
+      sx={{
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        py: 4
+      }}
+    >
+      <Grid container justifyContent="center">
+        <Grid item xs={12} md={8} lg={6}>
+          <Paper elevation={3} sx={{ 
+            p: 4,
+            width: '100%',
+            maxWidth: 800,
+            mx: 'auto',
+            position: 'relative'
+          }}>
+            <Typography variant="h4" align="center" gutterBottom sx={{ mb: 3 }}>
+              Como Fue tu Cita?
             </Typography>
-          )}
 
-          <Box display="flex" justifyContent="center" mb={2}>
-            <Rating
-              name="review-rating"
-              value={rate}
-              onChange={(_, newValue) => setRate(newValue)}
-              size="large"
-            />
-          </Box>
+            {error && (
+              <Typography color="error" align="center" sx={{ mb: 2 }}>
+                {error}
+              </Typography>
+            )}
 
-          <TextField
-            label="Comentário"
-            multiline
-            rows={4}
-            value={comment}
-            onChange={(e) => setComment(e.target.value)}
-            fullWidth
-            variant="outlined"
-            sx={{ mb: 3 }}
-          />
+            <Box sx={{ 
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: 3
+            }}>
+              <Rating
+                name="review-rating"
+                value={rate}
+                onChange={(_, newValue) => setRate(newValue)}
+                size="large"
+                sx={{ fontSize: '2.5rem' }}
+              />
 
-          <Box display="flex" justifyContent="center" gap={2}>
-            <ActionButton 
-              onClick={handleSubmit} 
-              text="Enviar Avaliação" 
-            />
-            <ActionButton 
-              onClick={() => navigate('/Perfil')} 
-              text="Não Quero Avaliar" 
-            />
-          </Box>
+              <TextField
+                label="Comentario"
+                multiline
+                rows={4}
+                value={comment}
+                onChange={(e) => setComment(e.target.value)}
+                fullWidth
+                variant="outlined"
+              />
 
-          <SuccessModal />
-        </Paper>
+              <Box sx={{ 
+                display: 'flex',
+                gap: 2,
+                flexWrap: 'wrap',
+                justifyContent: 'center',
+                width: '100%',
+                mt: 2
+              }}>
+                <Button
+                  onClick={handleSubmit}
+                  variant="contained"
+                  disabled={loading}
+                  sx={{
+                    bgcolor: 'green',
+                    minWidth: 200,
+                    py: 1.5,
+                    '&:hover': { bgcolor: 'darkgreen' }
+                  }}
+                >
+                  {loading ? <CircularProgress size={24} /> : 'Enviar Evaluación'}
+                </Button>
+
+                <Button
+                  onClick={() => navigate('/Perfil')}
+                  variant="outlined"
+                  sx={{
+                    borderColor: 'green',
+                    color: 'green',
+                    minWidth: 200,
+                    py: 1.5
+                  }}
+                >
+                  No Quiero Evaluar
+                </Button>
+              </Box>
+            </Box>
+
+            <SuccessModal />
+          </Paper>
+        </Grid>
       </Grid>
-    </Grid>
+    </Container>
   );
 };
 

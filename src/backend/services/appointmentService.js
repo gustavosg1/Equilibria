@@ -1,4 +1,4 @@
-import { getFirestore, collection, query, where, getDocs, updateDoc, doc } from 'firebase/firestore';
+import { getFirestore, collection, query, where, getDocs, updateDoc, doc, addDoc } from 'firebase/firestore';
 import { db } from '../config/FirebaseConfig';
 
 
@@ -50,5 +50,32 @@ export const cancelAppointment = async (appointmentId) => {
     await updateDoc(doc(db, 'appointments', appointmentId), { active: false });
   } catch (error) {
     throw new Error('Erro ao cancelar consulta');
+  }
+};
+
+export const createAppointment = async (appointmentData) => {
+  try {
+    const docRef = await addDoc(collection(db, 'appointments'), appointmentData);
+    return docRef.id;
+  } catch (error) {
+    throw new Error(`Erro ao criar agendamento: ${error.message}`);
+  }
+};
+
+export const updateAppointmentStatus = async (appointmentId, status) => {
+  try {
+    const appointmentRef = doc(db, 'appointments', appointmentId);
+    await updateDoc(appointmentRef, { active: status });
+  } catch (error) {
+    throw new Error(`Erro ao atualizar agendamento: ${error.message}`);
+  }
+};
+
+export const saveCallTranscription = async (appointmentId, transcription) => {
+  try {
+    const appointmentRef = doc(db, 'appointments', appointmentId);
+    await updateDoc(appointmentRef, { transcription });
+  } catch (error) {
+    throw new Error(`Erro ao salvar transcrição: ${error.message}`);
   }
 };
